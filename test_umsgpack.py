@@ -161,9 +161,11 @@ unpack_exception_test_vectors = [
     # Non-hashable key { 1 : False, [1,2,3] : True }
     [ "non-primitive key", "\x82\x01\xc2\x93\x01\x02\x03\xc3", umsgpack.KeyNotPrimitiveException ],
     # Non-hashable key { 1 : True, { 1 : 1 } : False }
-    [ "non-primitive key", "\x82\x01\xc3\x82\x01\x01\xc2", umsgpack.KeyNotPrimitiveException ],
+    [ "non-primitive key", "\x82\x01\xc3\x81\x01\x01\xc2", umsgpack.KeyNotPrimitiveException ],
     # Key duplicate { 1 : True, 1 : False }
     [ "duplicate key", "\x82\x01\xc3\x01\xc2", umsgpack.KeyDuplicateException ],
+    # Reserved code (0xc1)
+    [ "reserved code", "\xc1", umsgpack.ReservedCodeException ]
 ]
 
 ################################################################################
@@ -187,36 +189,36 @@ def test_pack_exceptions():
             assert isinstance(e, exception)
 
 def test_unpack_single():
-    for (name, data, obj) in single_test_vectors:
+    for (name, obj, data) in single_test_vectors:
         print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
         assert umsgpack.unpackb(data) == obj
 
 def test_unpack_composite():
-    for (name, data, obj) in composite_test_vectors:
+    for (name, obj, data) in composite_test_vectors:
         print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
         assert umsgpack.unpackb(data) == obj
 
 def test_unpack_exceptions():
     for (name, data, exception) in unpack_exception_test_vectors:
-        print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
+        print("\tTesting %s" % name)
         try:
             _ = umsgpack.unpackb(data)
         except Exception as e:
             assert isinstance(e, exception)
 
 def test_validate_single():
-    for (name, data, obj) in single_test_vectors:
+    for (name, obj, data) in single_test_vectors:
         print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
         assert umsgpack.validate(data)
 
 def test_validate_composite():
-    for (name, data, obj) in composite_test_vectors:
+    for (name, obj, data) in composite_test_vectors:
         print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
         assert umsgpack.validate(data)
 
 def test_validate_exceptions():
     for (name, data, exception) in unpack_exception_test_vectors:
-        print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
+        print("\tTesting %s" % name)
         if exception == umsgpack.InsufficientDataException:
             assert umsgpack.validate(data) == False
         else:
