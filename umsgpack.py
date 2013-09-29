@@ -14,14 +14,28 @@ import sys
 # Extension type for application code
 class Ext:
     def __init__(self, ext_type, data):
-        self.ext_type = ext_type
+        self.type = ext_type
         self.data = data
     def __eq__(self, other):
         return (isinstance(other, self.__class__) and
-                self.ext_type == other.ext_type and
+                self.type == other.type and
                 self.data == other.data)
     def __ne__(self, other):
         return not self.__eq__(other)
+    def __str__(self):
+        s = "Ext Object\n"
+        s += "   Type: %02x\n" % self.type
+        s += "   Data: "
+        for i in range(len(self.data)):
+            if isinstance(self.data[i], int):
+                s += "%02x " % (self.data[i])
+            else:
+                s += "%02x " % ord(self.data[i])
+            if i == 16-1:
+                break
+        if len(self.data) > 16:
+            s += "..."
+        return s
 
 ################################################################################
 
@@ -111,21 +125,21 @@ def pack_binary(x):
 
 def pack_ext(x):
     if len(x.data) == 1:
-        return b"\xd4" + struct.pack("B", x.ext_type & 0xff) + x.data
+        return b"\xd4" + struct.pack("B", x.type & 0xff) + x.data
     elif len(x.data) == 2:
-        return b"\xd5" + struct.pack("B", x.ext_type & 0xff) + x.data
+        return b"\xd5" + struct.pack("B", x.type & 0xff) + x.data
     elif len(x.data) == 4:
-        return b"\xd6" + struct.pack("B", x.ext_type & 0xff) + x.data
+        return b"\xd6" + struct.pack("B", x.type & 0xff) + x.data
     elif len(x.data) == 8:
-        return b"\xd7" + struct.pack("B", x.ext_type & 0xff) + x.data
+        return b"\xd7" + struct.pack("B", x.type & 0xff) + x.data
     elif len(x.data) == 16:
-        return b"\xd8" + struct.pack("B", x.ext_type & 0xff) + x.data
+        return b"\xd8" + struct.pack("B", x.type & 0xff) + x.data
     elif len(x.data) <= 2**8-1:
-        return b"\xc7" + struct.pack("BB", len(x.data), x.ext_type & 0xff) + x.data
+        return b"\xc7" + struct.pack("BB", len(x.data), x.type & 0xff) + x.data
     elif len(x.data) <= 2**16-1:
-        return b"\xc8" + struct.pack(">HB", len(x.data), x.ext_type & 0xff) + x.data
+        return b"\xc8" + struct.pack(">HB", len(x.data), x.type & 0xff) + x.data
     elif len(x.data) <= 2**32-1:
-        return b"\xc9" + struct.pack(">IB", len(x.data), x.ext_type & 0xff) + x.data
+        return b"\xc9" + struct.pack(">IB", len(x.data), x.type & 0xff) + x.data
     else:
         raise UnsupportedTypeException("huge ext data")
 
