@@ -1,5 +1,6 @@
 import umsgpack
 import struct
+import pytest
 
 single_test_vectors = [
     # None
@@ -189,11 +190,7 @@ def test_pack_composite():
 def test_pack_exceptions():
     for (name, obj, exception) in pack_exception_test_vectors:
         print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
-        try:
-            _ = umsgpack.packb(obj)
-            assert False
-        except Exception as e:
-            assert isinstance(e, exception)
+        with pytest.raises(exception): umsgpack.packb(obj)
 
 def test_unpack_single():
     for (name, obj, data) in single_test_vectors:
@@ -208,9 +205,4 @@ def test_unpack_composite():
 def test_unpack_exceptions():
     for (name, data, exception) in unpack_exception_test_vectors:
         print("\tTesting %s" % name)
-        try:
-            _ = umsgpack.unpackb(data)
-            assert False
-        except Exception as e:
-            assert isinstance(e, exception)
-
+        with pytest.raises(exception): umsgpack.unpackb(data)
