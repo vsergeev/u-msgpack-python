@@ -1,7 +1,8 @@
-# umsgpack-python v1.0 - vsergeev at gmail
+# u-msgpack-python v1.0 - vsergeev at gmail
 #
-# umsgpack-python is a Python 2 and 3 implementation of msgpack,
-# fully compliant with the latest msgpack spec as of 09/29/2013.
+# u-msgpack-python is a Python 2 and Python 3 compatible serializer and
+# deserializer for msgpack written in pure Python. It fully supports the latest
+# msgpack spec, as of 09/29/2013.
 #
 
 import struct
