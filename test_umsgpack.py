@@ -214,24 +214,3 @@ def test_unpack_exceptions():
         except Exception as e:
             assert isinstance(e, exception)
 
-def test_validate_single():
-    for (name, obj, data) in single_test_vectors:
-        print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
-        assert umsgpack.validate(data)
-
-def test_validate_composite():
-    for (name, obj, data) in composite_test_vectors:
-        print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
-        assert umsgpack.validate(data)
-
-def test_validate_exceptions():
-    for (name, data, exception) in unpack_exception_test_vectors:
-        print("\tTesting %s" % name)
-        if exception == umsgpack.InsufficientDataException:
-            assert umsgpack.validate(data) == False
-        else:
-            try:
-                _ = umsgpack.validate(data)
-            except Exception as e:
-                assert isinstance(e, exception)
-
