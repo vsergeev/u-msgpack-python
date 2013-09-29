@@ -299,25 +299,25 @@ def unpack_binary(code, read_fn):
 
 def unpack_ext(code, read_fn):
     if code == b'\xd4':
-        return Ext(ord(read_fn(1)), read_fn(1))
+        length = 1
     elif code == b'\xd5':
-        return Ext(ord(read_fn(1)), read_fn(2))
+        length = 2
     elif code == b'\xd6':
-        return Ext(ord(read_fn(1)), read_fn(4))
+        length = 4
     elif code == b'\xd7':
-        return Ext(ord(read_fn(1)), read_fn(8))
+        length = 8
     elif code == b'\xd8':
-        return Ext(ord(read_fn(1)), read_fn(16))
+        length = 16
     elif code == b'\xc7':
         length = struct.unpack("B", read_fn(1))[0]
-        return Ext(ord(read_fn(1)), read_fn(length))
     elif code == b'\xc8':
         length = struct.unpack(">H", read_fn(2))[0]
-        return Ext(ord(read_fn(1)), read_fn(length))
     elif code == b'\xc9':
         length = struct.unpack(">I", read_fn(4))[0]
-        return Ext(ord(read_fn(1)), read_fn(length))
-    raise Exception("logic error, not ext: 0x%02x" % ord(code))
+    else:
+        raise Exception("logic error, not ext: 0x%02x" % ord(code))
+
+    return Ext(ord(read_fn(1)), read_fn(length))
 
 def unpack_array(code, read_fn):
     if (ord(code) & 0xf0) == 0x90:
@@ -344,9 +344,10 @@ def unpack_map(code, read_fn):
     d = {}
     for i in range(length):
         k = _unpackb(read_fn)
+
         if not isinstance(k, collections.Hashable):
             raise KeyNotPrimitiveException("encountered non-primitive key type: %s" % str(type(k)))
-        if k in d:
+        elif k in d:
             raise KeyDuplicateException("encountered duplicate key: %s" % str(k))
         v = _unpackb(read_fn)
 
