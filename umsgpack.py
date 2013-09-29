@@ -41,49 +41,140 @@ class KeyDuplicateException(UnpackException): pass
 ################################################################################
 
 def pack_int(x):
-    pass
+    if x < 0:
+        if x >= -32:
+            return chr(x & 0xff)
+        elif x >= -2**(8-1):
+            return "\xd0" + chr(x & 0xff)
+        elif x >= -2**(16-1):
+            return "\xd1" + struct.pack(">h", x)
+        elif x >= -2**(32-1):
+            return "\xd2" + struct.pack(">i", x)
+        elif x >= -2**(64-1):
+            return "\xd3" + struct.pack(">q", x)
+        else:
+            raise UnsupportedTypeException("huge signed int")
+    else:
+        if x <= 127:
+            return chr(x)
+        elif x <= 2**8-1:
+            return "\xcc" + chr(x)
+        elif x <= 2**16-1:
+            return "\xcd" + struct.pack(">H", x)
+        elif x <= 2**32-1:
+            return "\xce" + struct.pack(">I", x)
+        elif x <= 2**64-1:
+            return "\xcf" + struct.pack(">Q", x)
+        else:
+            raise UnsupportedTypeException("huge unsigned int")
 
 def pack_nil(x):
-    pass
+    return "\xc0"
 
 def pack_boolean(x):
-    pass
+    return "\xc3" if x else "\xc2"
 
 def pack_float(x):
-    pass
+    if float_size == 64:
+        return "\xcb" + struct.pack(">d", x)
+    else:
+        return "\xca" + struct.pack(">f", x)
 
 def pack_string(x):
-    pass
+    x = str(x)
+
+    if len(x) <= 31:
+        return chr(0xa0 | len(x)) + x
+    elif len(x) <= 2**8-1:
+        return "\xd9" + chr(len(x)) + x
+    elif len(x) <= 2**16-1:
+        return "\xda" + struct.pack(">H", len(x)) + x
+    elif len(x) <= 2**32-1:
+        return "\xdb" + struct.pack(">I", len(x)) + x
+    else:
+        raise UnsupportedTypeException("huge string")
 
 def pack_binary(x):
-    pass
-
-def pack_array(x):
-    pass
-
-def pack_map(x):
-    pass
+    if len(x) <= 2**8-1:
+        return "\xc4" + chr(len(x)) + x
+    elif len(x) <= 2**16-1:
+        return "\xc5" + struct.pack(">H", len(x)) + x
+    elif len(x) <= 2**32-1:
+        return "\xc6" + struct.pack(">I", len(x)) + x
+    else:
+        raise UnsupportedTypeException("huge binary string")
 
 def pack_ext(x):
-    pass
+    if len(x.data) == 1:
+        return "\xd4" + chr(x.ext_type & 0xff) + x.data
+    elif len(x.data) == 2:
+        return "\xd5" + chr(x.ext_type & 0xff) + x.data
+    elif len(x.data) == 4:
+        return "\xd6" + chr(x.ext_type & 0xff) + x.data
+    elif len(x.data) == 8:
+        return "\xd7" + chr(x.ext_type & 0xff) + x.data
+    elif len(x.data) == 16:
+        return "\xd8" + chr(x.ext_type & 0xff) + x.data
+    elif len(x.data) <= 2**8-1:
+        return "\xc7" + chr(len(x.data)) + chr(x.ext_type & 0xff) + x.data
+    elif len(x.data) <= 2**16-1:
+        return "\xc8" + struct.pack(">H", len(x.data)) + chr(x.ext_type & 0xff) + x.data
+    elif len(x.data) <= 2**32-1:
+        return "\xc9" + struct.pack(">I", len(x.data)) + chr(x.ext_type & 0xff) + x.data
+    else:
+        raise UnsupportedTypeException("huge ext data")
+
+def pack_array(x):
+    if len(x) <= 15:
+        s = chr(0x90 | len(x))
+    elif len(x) <= 2**16-1:
+        s = "\xdc" + struct.pack(">H", len(x))
+    elif len(x) <= 2**32-1:
+        s = "\xdd" + struct.pack(">I", len(x))
+    else:
+        raise UnsupportedTypeException("huge array")
+
+    for e in x:
+        s += packb(e)
+
+    return s
+
+def pack_map(x):
+    if len(x) <= 15:
+        s = chr(0x80 | len(x))
+    elif len(x) <= 2**16-1:
+        s = "\xde" + struct.pack(">H", len(x))
+    elif len(x) <= 2**32-1:
+        s = "\xdf" + struct.pack(">I", len(x))
+    else:
+        raise UnsupportedTypeException("huge array")
+
+    for k,v in x.iteritems():
+        s += packb(k)
+        s += packb(v)
+
+    return s
 
 def packb(x):
     if x is None:
         return pack_nil(x)
     elif isinstance(x, bool):
         return pack_boolean(x)
-    elif isinstance(x, int):
-        pass
+    elif isinstance(x, int) or isinstance(x, long):
+        return pack_int(x)
     elif isinstance(x, float):
-        pass
+        return pack_float(x)
     elif isinstance(x, basestring):
-        pass
-    elif isinstance(x, list):
-        pass
+        try:
+            return pack_string(x.decode('utf-8'))
+        except UnicodeError:
+            return pack_binary(x)
+    elif isinstance(x, list) or isinstance(x, tuple):
+        return pack_array(x)
     elif isinstance(x, dict):
-        pass
+        return pack_map(x)
     elif isinstance(x, Ext):
-        pass
+        return pack_ext(x)
     else:
         raise UnsupportedTypeException("type %s not supported by msgpack" % str(type(x)))
 
