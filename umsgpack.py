@@ -43,19 +43,19 @@ class Ext:
 class PackException(Exception): pass
 class UnpackException(Exception): pass
 
-# Packing error: Object type not supported for packing
+# Packing error: Object type not supported for packing.
 class UnsupportedTypeException(PackException): pass
 
-# Unpacking error: Insufficient data to unpack object
+# Unpacking error: Insufficient data to unpack encoded object.
 class InsufficientDataException(UnpackException): pass
-# Unpacking error: Reserved code encountered
-class ReservedCodeException(UnpackException): pass
-# Unpacking error: Non-hashable key encountered during map unpacking
-class KeyNotPrimitiveException(UnpackException): pass
-# Unpacking error: Duplicate key encountered during map unpacking
-class KeyDuplicateException(UnpackException): pass
-# Unpacking error: Invalid string (not UTF-8)
+# Unpacking error: Invalid string (not UTF-8) encountered.
 class InvalidStringException(UnpackException): pass
+# Unpacking error: Reserved code encountered.
+class ReservedCodeException(UnpackException): pass
+# Unpacking error: Unhashable key encountered during map unpacking.
+class KeyNotPrimitiveException(UnpackException): pass
+# Unpacking error: Duplicate key encountered during map unpacking.
+class KeyDuplicateException(UnpackException): pass
 
 ################################################################################
 
@@ -351,7 +351,7 @@ def unpack_map(code, read_fn):
         if not isinstance(k, collections.Hashable):
             raise KeyNotPrimitiveException("encountered non-primitive key type: %s" % str(type(k)))
         elif k in d:
-            raise KeyDuplicateException("encountered duplicate key: %s" % str(k))
+            raise KeyDuplicateException("encountered duplicate key: %s, %s" % (str(k), str(type(k))))
         v = _unpackb(read_fn)
 
         d[k] = v
@@ -374,7 +374,18 @@ def _unpackb(read_fn):
     return unpack_dispatch_table[code](code, read_fn)
 
 # Wrapper unpack function that builds a read stream function from s
-def unpackb(s):
+
+# For Python 2, expects a str object
+def unpackb2(s):
+    if not isinstance(s, str):
+        raise TypeError("expected packed data as type 'str'")
+    read_fn = string_reader(s)
+    return _unpackb(read_fn)
+
+# For Python 3, expects a bytes object
+def unpackb3(s):
+    if not isinstance(s, bytes):
+        raise TypeError("expected packed data as type 'bytes'")
     read_fn = string_reader(s)
     return _unpackb(read_fn)
 
@@ -383,6 +394,7 @@ def unpackb(s):
 def __init():
     global float_size
     global packb
+    global unpackb
     global unpack_dispatch_table
 
 
@@ -392,8 +404,13 @@ def __init():
     else:
         float_size = 32
 
-    # Map packb to the appropriate version
-    packb = packb3 if sys.version > '3' else packb2
+    # Map packb and unpackb to the appropriate version
+    if sys.version > '3':
+        packb = packb3
+        unpackb = unpackb3
+    else:
+        packb = packb2
+        unpackb = unpackb2
 
     # Build a dispatch table for fast lookup of unpacking function
 
