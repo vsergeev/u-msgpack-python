@@ -1,3 +1,10 @@
+# Run tests with
+#   $ py.test       # Python 3
+# or
+#   $ py.test2      # Python 2
+#
+# (Default Python version may depend on your system.)
+
 import umsgpack
 import struct
 import pytest
@@ -53,19 +60,19 @@ single_test_vectors = [
     [ "64-bit float", 2.5, b"\xcb" + b"\x40\x04\x00\x00" + b"\x00\x00\x00\x00" ],
     [ "64-bit float", float(10**35), b"\xcb" + b"\x47\x33\x42\x61" + b"\x72\xc7\x4d\x82" ],
     # Fixstr String
-    [ "fix string", "", b"\xa0" ],
-    [ "fix string", "a", b"\xa1\x61" ],
-    [ "fix string", "abc", b"\xa3\x61\x62\x63" ],
-    [ "fix string", "a" * 31, b"\xbf" + b"\x61"*31 ],
+    [ "fix string", u"", b"\xa0" ],
+    [ "fix string", u"a", b"\xa1\x61" ],
+    [ "fix string", u"abc", b"\xa3\x61\x62\x63" ],
+    [ "fix string", u"a" * 31, b"\xbf" + b"\x61"*31 ],
     # 8-bit String
-    [ "8-bit string", "b" * 32, b"\xd9\x20" + b"b" * 32 ],
-    [ "8-bit string", "c" * 100, b"\xd9\x64" + b"c" * 100 ],
-    [ "8-bit string", "d" * 255, b"\xd9\xff" + b"d" * 255 ],
+    [ "8-bit string", u"b" * 32, b"\xd9\x20" + b"b" * 32 ],
+    [ "8-bit string", u"c" * 100, b"\xd9\x64" + b"c" * 100 ],
+    [ "8-bit string", u"d" * 255, b"\xd9\xff" + b"d" * 255 ],
     # 16-bit String
-    [ "16-bit string", "b" * 256, b"\xda\x01\x00" + b"b" * 256 ],
-    [ "16-bit string", "c" * 65535, b"\xda\xff\xff" + b"c" * 65535 ],
+    [ "16-bit string", u"b" * 256, b"\xda\x01\x00" + b"b" * 256 ],
+    [ "16-bit string", u"c" * 65535, b"\xda\xff\xff" + b"c" * 65535 ],
     # 32-bit String
-    [ "32-bit string", "b" * 65536, b"\xdb\x00\x01\x00\x00" + b"b" * 65536 ],
+    [ "32-bit string", u"b" * 65536, b"\xdb\x00\x01\x00\x00" + b"b" * 65536 ],
     # 8-bit Binary
     [ "8-bit binary", b"\x80" * 1, b"\xc4\x01" + b"\x80" * 1 ],
     [ "8-bit binary", b"\x80" * 32, b"\xc4\x20" + b"\x80" * 32 ],
@@ -98,24 +105,24 @@ single_test_vectors = [
 
 composite_test_vectors = [
     # Fix Array
-    [ "fix array", [ 5, "abc", True ], b"\x93\x05\xa3\x61\x62\x63\xc3" ],
+    [ "fix array", [ 5, u"abc", True ], b"\x93\x05\xa3\x61\x62\x63\xc3" ],
     # 16-bit Array
     [ "16-bit array", [ 0x05 ]*16, b"\xdc\x00\x10" + b"\x05"*16 ],
     [ "16-bit array", [ 0x05 ]*65535, b"\xdc\xff\xff" + b"\x05"*65535 ],
     # 32-bit Array
     [ "16-bit array", [ 0x05 ]*65536, b"\xdd\x00\x01\x00\x00" + b"\x05"*65536 ],
     # Fix Map
-    [ "fix map", { 1: True, 2: "abc", 3: b"\x80" }, b"\x83\x01\xc3\x02\xa3\x61\x62\x63\x03\xc4\x01\x80" ],
-    [ "fix map", { "abc" : 5 }, b"\x81\xa3\x61\x62\x63\x05" ],
+    [ "fix map", { 1: True, 2: u"abc", 3: b"\x80" }, b"\x83\x01\xc3\x02\xa3\x61\x62\x63\x03\xc4\x01\x80" ],
+    [ "fix map", { u"abc" : 5 }, b"\x81\xa3\x61\x62\x63\x05" ],
     [ "fix map", { b"\x80" : 0xffff }, b"\x81\xc4\x01\x80\xcd\xff\xff" ],
     [ "fix map", { True : None }, b"\x81\xc3\xc0" ],
     # 16-bit Map
     [ "16-bit map", { k: 0x05 for k in range(16) }, b"\xde\x00\x10" + b"".join( [ struct.pack("B", i) + b"\x05" for i in range(16) ] ) ],
     [ "16-bit map", { k: 0x05 for k in range(6000) }, b"\xde\x17\x70" + b"".join([ struct.pack("B", i) + b"\x05" for i in range(128)]) + b"".join([ b"\xcc" + struct.pack("B", i) + b"\x05" for i in range(128, 256)]) + b"".join([ b"\xcd" + struct.pack(">H", i) + b"\x05" for i in range(256, 6000)]) ],
     # Complex Array
-    [ "complex array", [ True, 0x01, umsgpack.Ext(0x03, b"foo"), 0xff, { 1: False, 2: "abc" }, b"\x80", [ 1, 2, 3], "abc" ], b"\x98\xc3\x01\xc7\x03\x03\x66\x6f\x6f\xcc\xff\x82\x01\xc2\x02\xa3\x61\x62\x63\xc4\x01\x80\x93\x01\x02\x03\xa3\x61\x62\x63" ],
+    [ "complex array", [ True, 0x01, umsgpack.Ext(0x03, b"foo"), 0xff, { 1: False, 2: u"abc" }, b"\x80", [ 1, 2, 3], u"abc" ], b"\x98\xc3\x01\xc7\x03\x03\x66\x6f\x6f\xcc\xff\x82\x01\xc2\x02\xa3\x61\x62\x63\xc4\x01\x80\x93\x01\x02\x03\xa3\x61\x62\x63" ],
     # Complex Map
-    [  "complex map", { 1 : [{1: 2, 3: 4}, {}], 2: 1, 3: [False, 'def'], 4: {0x100000000: 'a', 0xffffffff: 'b'}}, b"\x84\x01\x92\x82\x01\x02\x03\x04\x80\x02\x01\x03\x92\xc2\xa3\x64\x65\x66\x04\x82\xcf\x00\x00\x00\x01\x00\x00\x00\x00\xa1\x61\xce\xff\xff\xff\xff\xa1\x62" ]
+    [ "complex map", { 1 : [{1: 2, 3: 4}, {}], 2: 1, 3: [False, u"def"], 4: {0x100000000: u"a", 0xffffffff: u"b"}}, b"\x84\x01\x92\x82\x01\x02\x03\x04\x80\x02\x01\x03\x92\xc2\xa3\x64\x65\x66\x04\x82\xcf\x00\x00\x00\x01\x00\x00\x00\x00\xa1\x61\xce\xff\xff\xff\xff\xa1\x62" ]
 ]
 
 pack_exception_test_vectors = [

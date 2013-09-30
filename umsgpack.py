@@ -176,7 +176,7 @@ def pack_map(x):
 
 ########################################
 
-# Pack for Python 2, with basestring type, and long type
+# Pack for Python 2, with 'unicode' type, 'str' type, and 'long' type
 def packb2(x):
     if x is None:
         return pack_nil(x)
@@ -186,11 +186,10 @@ def packb2(x):
         return pack_integer(x)
     elif isinstance(x, float):
         return pack_float(x)
-    elif isinstance(x, basestring):
-        try:
-            return pack_string(x.decode('utf-8'))
-        except UnicodeError:
-            return pack_binary(x)
+    elif isinstance(x, unicode):
+        return pack_string(x)
+    elif isinstance(x, str):
+        return pack_binary(x)
     elif isinstance(x, list) or isinstance(x, tuple):
         return pack_array(x)
     elif isinstance(x, dict):
@@ -200,7 +199,7 @@ def packb2(x):
     else:
         raise UnsupportedTypeException("unsupported type: %s" % str(type(x)))
 
-# Pack for Python 3, with unicode string type, bytes type, and no long type
+# Pack for Python 3, with unicode 'str' type, 'bytes' type, and no 'long' type
 def packb3(x):
     if x is None:
         return pack_nil(x)
@@ -222,16 +221,6 @@ def packb3(x):
         return pack_ext(x)
     else:
         raise UnsupportedTypeException("unsupported type: %s" % str(type(x)))
-
-# Note: initialization code below
-
-# Auto-detect system float precision
-if sys.float_info.mant_dig == 53:
-    float_size = 64
-else:
-    float_size = 32
-# Map packb to the appropriate version
-packb = packb3 if sys.version > '3' else packb2
 
 ################################################################################
 
@@ -389,62 +378,74 @@ def unpackb(s):
     read_fn = string_reader(s)
     return _unpackb(read_fn)
 
-########################################
-
-# Note: initialization code below
-
-# Build a dispatch table for fast lookup of unpacking function
-
-unpack_dispatch_table = {}
-# Fix uint
-for code in range(0, 0x7f+1):
-    unpack_dispatch_table[struct.pack("B", code)] = unpack_integer
-# Fix map
-for code in range(0x80, 0x8f+1):
-    unpack_dispatch_table[struct.pack("B", code)] = unpack_map
-# Fix array
-for code in range(0x90, 0x9f+1):
-    unpack_dispatch_table[struct.pack("B", code)] = unpack_array
-# Fix str
-for code in range(0xa0, 0xbf+1):
-    unpack_dispatch_table[struct.pack("B", code)] = unpack_string
-# Nil
-unpack_dispatch_table[b'\xc0'] = unpack_nil
-# Reserved
-unpack_dispatch_table[b'\xc1'] = unpack_reserved
-# Boolean
-unpack_dispatch_table[b'\xc2'] = unpack_boolean
-unpack_dispatch_table[b'\xc3'] = unpack_boolean
-# Bin
-for code in range(0xc4, 0xc6+1):
-    unpack_dispatch_table[struct.pack("B", code)] = unpack_binary
-# Ext
-for code in range(0xc7, 0xc9+1):
-    unpack_dispatch_table[struct.pack("B", code)] = unpack_ext
-# Float
-unpack_dispatch_table[b'\xca'] = unpack_float
-unpack_dispatch_table[b'\xcb'] = unpack_float
-# Uint
-for code in range(0xcc, 0xcf+1):
-    unpack_dispatch_table[struct.pack("B", code)] = unpack_integer
-# Int
-for code in range(0xd0, 0xd3+1):
-    unpack_dispatch_table[struct.pack("B", code)] = unpack_integer
-# Fixext
-for code in range(0xd4, 0xd8+1):
-    unpack_dispatch_table[struct.pack("B", code)] = unpack_ext
-# String
-for code in range(0xd9, 0xdb+1):
-    unpack_dispatch_table[struct.pack("B", code)] = unpack_string
-# Array
-unpack_dispatch_table[b'\xdc'] = unpack_array
-unpack_dispatch_table[b'\xdd'] = unpack_array
-# Map
-unpack_dispatch_table[b'\xde'] = unpack_map
-unpack_dispatch_table[b'\xdf'] = unpack_map
-# Negative fixint
-for code in range(0xe0, 0xff+1):
-    unpack_dispatch_table[struct.pack("B", code)] = unpack_integer
-
 ################################################################################
 
+def __init():
+    global float_size
+    global packb
+    global unpack_dispatch_table
+
+
+    # Auto-detect system float precision
+    if sys.float_info.mant_dig == 53:
+        float_size = 64
+    else:
+        float_size = 32
+
+    # Map packb to the appropriate version
+    packb = packb3 if sys.version > '3' else packb2
+
+    # Build a dispatch table for fast lookup of unpacking function
+
+    unpack_dispatch_table = {}
+    # Fix uint
+    for code in range(0, 0x7f+1):
+        unpack_dispatch_table[struct.pack("B", code)] = unpack_integer
+    # Fix map
+    for code in range(0x80, 0x8f+1):
+        unpack_dispatch_table[struct.pack("B", code)] = unpack_map
+    # Fix array
+    for code in range(0x90, 0x9f+1):
+        unpack_dispatch_table[struct.pack("B", code)] = unpack_array
+    # Fix str
+    for code in range(0xa0, 0xbf+1):
+        unpack_dispatch_table[struct.pack("B", code)] = unpack_string
+    # Nil
+    unpack_dispatch_table[b'\xc0'] = unpack_nil
+    # Reserved
+    unpack_dispatch_table[b'\xc1'] = unpack_reserved
+    # Boolean
+    unpack_dispatch_table[b'\xc2'] = unpack_boolean
+    unpack_dispatch_table[b'\xc3'] = unpack_boolean
+    # Bin
+    for code in range(0xc4, 0xc6+1):
+        unpack_dispatch_table[struct.pack("B", code)] = unpack_binary
+    # Ext
+    for code in range(0xc7, 0xc9+1):
+        unpack_dispatch_table[struct.pack("B", code)] = unpack_ext
+    # Float
+    unpack_dispatch_table[b'\xca'] = unpack_float
+    unpack_dispatch_table[b'\xcb'] = unpack_float
+    # Uint
+    for code in range(0xcc, 0xcf+1):
+        unpack_dispatch_table[struct.pack("B", code)] = unpack_integer
+    # Int
+    for code in range(0xd0, 0xd3+1):
+        unpack_dispatch_table[struct.pack("B", code)] = unpack_integer
+    # Fixext
+    for code in range(0xd4, 0xd8+1):
+        unpack_dispatch_table[struct.pack("B", code)] = unpack_ext
+    # String
+    for code in range(0xd9, 0xdb+1):
+        unpack_dispatch_table[struct.pack("B", code)] = unpack_string
+    # Array
+    unpack_dispatch_table[b'\xdc'] = unpack_array
+    unpack_dispatch_table[b'\xdd'] = unpack_array
+    # Map
+    unpack_dispatch_table[b'\xde'] = unpack_map
+    unpack_dispatch_table[b'\xdf'] = unpack_map
+    # Negative fixint
+    for code in range(0xe0, 0xff+1):
+        unpack_dispatch_table[struct.pack("B", code)] = unpack_integer
+
+__init()
