@@ -1,6 +1,6 @@
 # u-msgpack-python v1.0
 
-u-msgpack-python is a lightweight [msgpack](https://github.com/msgpack/msgpack) serializer and deserializer module that is compatible with Python 2 and Python 3. u-msgpack-python is fully compliant with the latest msgpack specification, as of 09/29/2013. In particular, it supports the new binary, UTF-8 string, and application ext types.
+u-msgpack-python is a lightweight [msgpack](https://github.com/msgpack/msgpack) serializer and deserializer module that is compatible with Python 2 and Python 3. u-msgpack-python is fully compliant with the latest [msgpack specification](https://github.com/msgpack/msgpack/blob/master/spec.md), as of 09/29/2013. In particular, it supports the new binary, UTF-8 string, and application ext types.
 
 u-msgpack-python is written in pure Python and is currently distributed as a single file: [umsgpack.py](umsgpack.py)
 
@@ -42,6 +42,7 @@ An example of encoding and decoding an application ext type:
 >>> umsgpack.packb({u"special stuff": foo, u"awesome": True})
 b'\x82\xadspecial stuff\xc7\x03\x05\x01\x02\x03\xa7awesome\xc3'
 >>> bar = umsgpack.unpackb(_)
+
 >>> print(bar["special stuff"])
 Ext Object
    Type: 05
@@ -95,17 +96,17 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
     >>> 
     ```
 
-* `InsufficientdataException`: Insufficient data to unpack encoded object.
+* `InsufficientDataException`: Insufficient data to unpack encoded object.
 
     ```
     >>> # Attempt to unpack a cut-off encoded 32-bit unsigned int
-    ... umsgpack.unpackb("\xce\xff\xff\xff")
+    ... umsgpack.unpackb(b"\xce\xff\xff\xff")
     ...
     umsgpack.InsufficientDataException
     >>> 
 
     >>> # Attempt to unpack an array of length 2 missing the second item
-    ... umsgpack.unpackb("\x92\xc2")
+    ... umsgpack.unpackb(b"\x92\xc2")
     ...
     umsgpack.InsufficientDataException
     >>> 
@@ -117,7 +118,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 
     ```
     >>> # Attempt to unpack the string "\x80\x81"
-    ... umsgpack.unpackb("\xa2\x80\x81")
+    ... umsgpack.unpackb(b"\xa2\x80\x81")
     ...
     umsgpack.InvalidStringException: unpacked string is not utf-8
     >>> 
@@ -127,7 +128,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 
     ```
     >>> # Attempt to unpack reserved code 0xc1
-    ... umsgpack.unpackb("\xc1")
+    ... umsgpack.unpackb(b"\xc1")
     ...
     umsgpack.ReservedCodeException: reserved code encountered: 0xc1
     >>> 
@@ -139,7 +140,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 
     ```
     >>> # Attempt to unpack { {} : False }
-    ... umsgpack.unpackb("\x82\x80\xc2")
+    ... umsgpack.unpackb(b"\x82\x80\xc2")
     ...
     umsgpack.KeyNotPrimitiveException: encountered non-primitive key type: <type 'dict'>
     >>> 
@@ -151,23 +152,23 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 
     ```
     >>> # Attempt to unpack { 1: True, 1: False }
-    ... umsgpack.unpackb("\x82\x01\xc3\x01\xc2")
+    ... umsgpack.unpackb(b"\x82\x01\xc3\x01\xc2")
     ...
     umsgpack.KeyDuplicateException: encountered duplicate key: 1, <type 'int'>
     >>> 
     ```
 
-## Notes
+## Behavior Notes
 
 * Python 2
-  * `unicode` type objects are packed into, and unpacked from, the msgpack string format
-  * `str` type objects are packed into, and unpacked from, the msgpack bytes format
+  * `unicode` type objects are packed into, and unpacked from, the msgpack `string` format
+  * `str` type objects are packed into, and unpacked from, the msgpack `binary` format
 * Python 3
-  * `str` type objects are packed into, and unpacked from, the msgpack string format
-  * `bytes` type objects are packed into, and unpacked from, the msgpack bytes format
+  * `str` type objects are packed into, and unpacked from, the msgpack `string` format
+  * `bytes` type objects are packed into, and unpacked from, the msgpack `binary` format
 * The msgpack string format is strictly decoded with UTF-8. An exception is thrown if the string bytes cannot be decoded into a valid UTF-8 string.
-* msgpack arrays are unpacked into Python lists, not tuples
-* Python floats are packed into the msgpack float32 or float64 format depending on the system's sys.float\_info
+* The msgpack array format is unpacked into a Python list, not tuple
+* Python float types are packed into the msgpack float32 or float64 format depending on the system's `sys.float_info`
 
 ## Testing
 

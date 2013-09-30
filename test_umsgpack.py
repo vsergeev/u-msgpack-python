@@ -3,7 +3,7 @@
 # or
 #   $ py.test2      # Python 2
 #
-# (Default Python version may depend on your system.)
+# (Actual Python version invoked may depend on your system.)
 
 import umsgpack
 import struct
@@ -213,3 +213,4 @@ def test_unpack_exceptions():
     for (name, data, exception) in unpack_exception_test_vectors:
         print("\tTesting %s" % name)
         with pytest.raises(exception): umsgpack.unpackb(data)
+

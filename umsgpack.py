@@ -1,8 +1,9 @@
 # u-msgpack-python v1.0 - vsergeev at gmail
 #
 # u-msgpack-python is a Python 2 and Python 3 compatible serializer and
-# deserializer for msgpack written in pure Python. It fully supports the latest
-# msgpack spec, as of 09/29/2013.
+# deserializer for msgpack written in pure Python. It supports the latest
+# msgpack spec, as of 09/29/2013, namely the utf-8 string, binary, and ext
+# types.
 #
 
 import struct
@@ -16,12 +17,15 @@ class Ext:
     def __init__(self, ext_type, data):
         self.type = ext_type
         self.data = data
+
     def __eq__(self, other):
         return (isinstance(other, self.__class__) and
                 self.type == other.type and
                 self.data == other.data)
+
     def __ne__(self, other):
         return not self.__eq__(other)
+
     def __str__(self):
         s = "Ext Object\n"
         s += "   Type: %02x\n" % self.type
@@ -58,6 +62,11 @@ class KeyNotPrimitiveException(UnpackException): pass
 class KeyDuplicateException(UnpackException): pass
 
 ################################################################################
+
+# You may notice struct.pack("B", x) instead of the simpler chr(x) in the code
+# below. This is to allow for seamless Python 2 and 3 compatibility, as chr(x)
+# has a str return type instead of bytes in Python 3, and struct.pack(...) has
+# the right return type in both versions.
 
 def pack_integer(x):
     if x < 0:
@@ -173,8 +182,6 @@ def pack_map(x):
         s += packb(v)
 
     return s
-
-########################################
 
 # Pack for Python 2, with 'unicode' type, 'str' type, and 'long' type
 def packb2(x):
@@ -346,12 +353,15 @@ def unpack_map(code, read_fn):
 
     d = {}
     for i in range(length):
+        # Unpack key
         k = _unpackb(read_fn)
 
         if not isinstance(k, collections.Hashable):
             raise KeyNotPrimitiveException("encountered non-primitive key type: %s" % str(type(k)))
         elif k in d:
             raise KeyDuplicateException("encountered duplicate key: %s, %s" % (str(k), str(type(k))))
+
+        # Unpack value
         v = _unpackb(read_fn)
 
         d[k] = v
@@ -372,8 +382,6 @@ def string_reader(s):
 def _unpackb(read_fn):
     code = read_fn(1)
     return unpack_dispatch_table[code](code, read_fn)
-
-# Wrapper unpack function that builds a read stream function from s
 
 # For Python 2, expects a str object
 def unpackb2(s):
@@ -396,7 +404,6 @@ def __init():
     global packb
     global unpackb
     global unpack_dispatch_table
-
 
     # Auto-detect system float precision
     if sys.float_info.mant_dig == 53:
