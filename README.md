@@ -37,7 +37,7 @@ b'\x97\x01\xc3\xc2\xce\xff\xff\xff\xff\x82\xa3foo\xc4\x03\x80\x01\x02\xa3bar\x94
 
 An example of encoding and decoding an application ext type:
 ```
->>> # Create foo, an Ext object with type 0x05 and data b"\x01\x02\x03"
+>>> # Create an Ext object with type 0x05 and data b"\x01\x02\x03"
 ... foo = umsgpack.Ext(0x05, b"\x01\x02\x03")
 >>> umsgpack.packb({u"special stuff": foo, u"awesome": True})
 b'\x82\xadspecial stuff\xc7\x03\x05\x01\x02\x03\xa7awesome\xc3'
