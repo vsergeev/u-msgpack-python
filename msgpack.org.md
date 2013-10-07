@@ -17,27 +17,29 @@ Basic Example:
 ```
 A more complicated example:
 ```
->>> umsgpack.packb([1, True, False, 0xffffffff, {u"foo": b"\x80\x01\x02", \
-        u"bar": [1,2,3, {u"a": [1,2,3,{}]}]}, -1, 2.12345])
-'\x97\x01\xc3\xc2\xce\xff\xff\xff\xff\x82\xa3foo\xc4\x03\x80\x01\x02'
-'\xa3bar\x94\x01\x02\x03\x81\xa1a\x94\x01\x02\x03\x80\xff\xcb@\x00'
-'\xfc\xd3Z\x85\x87\x94'
+>>> umsgpack.packb( \
+    [1, True, False, 0xffffffff, {u"foo": b"\x80\x01\x02", \
+     u"bar": [1,2,3, {u"a": [1,2,3,{}]}]} -1, 2.12345] )
+'\x97\x01\xc3\xc2\xce\xff\xff\xff\xff\x82\xa3foo\xc4\x03\x80\x01'
+'\x02\xa3bar\x94\x01\x02\x03\x81\xa1a\x94\x01\x02\x03\x80\xff\xcb'
+'@\x00\xfc\xd3Z\x85\x87\x94'
 >>> umsgpack.unpackb(_)
-[1, True, False, 4294967295, {u'foo': '\x80\x01\x02', u'bar': \
-    [1, 2, 3, {u'a': [1, 2, 3, {}]}]}, -1, 2.12345]
+[1, True, False, 4294967295, {u'foo': '\x80\x01\x02', \
+ u'bar': [1, 2, 3, {u'a': [1, 2, 3, {}]}]}, -1, 2.12345]
 >>> 
 ```
 
 The more complicated example in Python 3:
 ```
->>> umsgpack.packb([1, True, False, 0xffffffff, {u"foo": b"\x80\x01\x02", \
-        u"bar": [1,2,3, {u"a": [1,2,3,{}]}]}, -1, 2.12345])
-b'\x97\x01\xc3\xc2\xce\xff\xff\xff\xff\x82\xa3foo\xc4\x03\x80\x01\x02'
-b'\xa3bar\x94\x01\x02\x03\x81\xa1a\x94\x01\x02\x03\x80\xff\xcb@\x00\xfc'
-b'\xd3Z\x85\x87\x94'
+>>> umsgpack.packb( \
+    [1, True, False, 0xffffffff, {u"foo": b"\x80\x01\x02", \
+     u"bar": [1,2,3, {u"a": [1,2,3,{}]}]}, -1, 2.12345] )
+b'\x97\x01\xc3\xc2\xce\xff\xff\xff\xff\x82\xa3foo\xc4\x03\x80\x01'
+b'\x02\xa3bar\x94\x01\x02\x03\x81\xa1a\x94\x01\x02\x03\x80\xff\xcb'
+b'@\x00\xfc\xd3Z\x85\x87\x94'
 >>> umsgpack.unpackb(_)
-[1, True, False, 4294967295, {'foo': b'\x80\x01\x02', 'bar': \
-    [1, 2, 3, {'a': [1, 2, 3, {}]}]}, -1, 2.12345]
+[1, True, False, 4294967295, {'foo': b'\x80\x01\x02', \
+ 'bar': [1, 2, 3, {'a': [1, 2, 3, {}]}]}, -1, 2.12345]
 >>> 
 ```
 
@@ -48,7 +50,6 @@ An example of encoding and decoding an application ext type:
 >>> umsgpack.packb({u"special stuff": foo, u"awesome": True})
 b'\x82\xadspecial stuff\xc7\x03\x05\x01\x02\x03\xa7awesome\xc3'
 >>> bar = umsgpack.unpackb(_)
-
 >>> print(bar["special stuff"])
 Ext Object
    Type: 05

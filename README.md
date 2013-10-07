@@ -42,7 +42,6 @@ An example of encoding and decoding an application ext type:
 >>> umsgpack.packb({u"special stuff": foo, u"awesome": True})
 b'\x82\xadspecial stuff\xc7\x03\x05\x01\x02\x03\xa7awesome\xc3'
 >>> bar = umsgpack.unpackb(_)
-
 >>> print(bar["special stuff"])
 Ext Object
    Type: 05
