@@ -6,6 +6,7 @@
 # (Actual Python version invoked may depend on your system.)
 
 import umsgpack
+import sys
 import struct
 import pytest
 
@@ -182,6 +183,29 @@ unpack_exception_test_vectors = [
     [ "invalid string", b"\xa1\x80", umsgpack.InvalidStringException ],
 ]
 
+compatibility_test_vectors = [
+    # Fix Raw
+    [ "fix raw", b"", b"\xa0" ],
+    [ "fix raw", u"", b"\xa0" ],
+    [ "fix raw", b"a", b"\xa1\x61" ],
+    [ "fix raw", u"a", b"\xa1\x61" ],
+    [ "fix raw", b"abc", b"\xa3\x61\x62\x63" ],
+    [ "fix raw", u"abc", b"\xa3\x61\x62\x63" ],
+    [ "fix raw", b"a" * 31, b"\xbf" + b"\x61"*31 ],
+    [ "fix raw", u"a" * 31, b"\xbf" + b"\x61"*31 ],
+    # 16-bit Raw
+    [ "16-bit raw", u"b" * 32, b"\xda\x00\x20" + b"b" * 32 ],
+    [ "16-bit raw", b"b" * 32, b"\xda\x00\x20" + b"b" * 32 ],
+    [ "16-bit raw", u"b" * 256, b"\xda\x01\x00" + b"b" * 256 ],
+    [ "16-bit raw", b"b" * 256, b"\xda\x01\x00" + b"b" * 256 ],
+    [ "16-bit raw", u"c" * 65535, b"\xda\xff\xff" + b"c" * 65535 ],
+    [ "16-bit raw", b"c" * 65535, b"\xda\xff\xff" + b"c" * 65535 ],
+    # 32-bit Raw
+    [ "32-bit raw", u"b" * 65536, b"\xdb\x00\x01\x00\x00" + b"b" * 65536 ],
+    [ "32-bit raw", b"b" * 65536, b"\xdb\x00\x01\x00\x00" + b"b" * 65536 ],
+]
+
+
 ################################################################################
 
 def test_pack_single():
@@ -202,7 +226,9 @@ def test_pack_exceptions():
 def test_unpack_single():
     for (name, obj, data) in single_test_vectors:
         print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
-        assert umsgpack.unpackb(data) == obj
+        unpacked = umsgpack.unpackb(data)
+        assert isinstance(unpacked, type(obj))
+        assert unpacked == obj
 
 def test_unpack_composite():
     for (name, obj, data) in composite_test_vectors:
@@ -213,4 +239,33 @@ def test_unpack_exceptions():
     for (name, data, exception) in unpack_exception_test_vectors:
         print("\tTesting %s" % name)
         with pytest.raises(exception): umsgpack.unpackb(data)
+
+def test_pack_compatibility():
+    umsgpack.compatibility = True
+
+    for (name, obj, data) in compatibility_test_vectors:
+        print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
+        assert umsgpack.packb(obj) == data
+
+    umsgpack.compatibility = False
+
+def test_unpack_compatibility():
+    umsgpack.compatibility = True
+
+    for (name, obj, data) in compatibility_test_vectors:
+        print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
+        unpacked = umsgpack.unpackb(data)
+
+        # Encoded raw should always unpack to bytes
+        if sys.version_info.major == 3 and isinstance(obj, str):
+            _obj = obj.encode('utf-8')
+        elif sys.version_info.major == 2 and isinstance(obj, unicode):
+            _obj = bytes(obj)
+        else:
+            _obj = obj
+
+        assert isinstance(unpacked, type(_obj))
+        assert unpacked == _obj
+
+    umsgpack.compatibility = False
 
