@@ -1,6 +1,6 @@
-# u-msgpack-python v1.0
+# u-msgpack-python v1.2
 
-u-msgpack-python is a lightweight [MessagePack](https://github.com/msgpack/msgpack) serializer and deserializer module, compatible with both Python 2 and Python 3. u-msgpack-python is fully compliant with the latest [MessagePack specification](https://github.com/msgpack/msgpack/blob/master/spec.md), as of 09/29/2013. In particular, it supports the new binary, UTF-8 string, and application ext types.
+u-msgpack-python is a lightweight [MessagePack](https://github.com/msgpack/msgpack) serializer and deserializer module, compatible with both Python 2 and Python 3. u-msgpack-python is fully compliant with the latest [MessagePack specification](https://github.com/msgpack/msgpack/blob/master/spec.md), as of September 29, 2013. In particular, it supports the new binary, UTF-8 string, and application ext types.
 
 u-msgpack-python is written in pure Python and is currently distributed as a single file: [umsgpack.py](umsgpack.py)
 
@@ -9,7 +9,7 @@ Future releases may also provide a Python .egg package.
 ## Examples
 
 Basic Example:
-```
+``` python
 >>> import umsgpack
 >>> umsgpack.packb({u"compact": True, u"schema": 0})
 '\x82\xa7compact\xc3\xa6schema\x00'
@@ -18,7 +18,7 @@ Basic Example:
 >>> 
 ```
 A more complicated example:
-```
+``` python
 >>> umsgpack.packb([1, True, False, 0xffffffff, {u"foo": b"\x80\x01\x02", u"bar": [1,2,3, {u"a": [1,2,3,{}]}]}, -1, 2.12345])
 '\x97\x01\xc3\xc2\xce\xff\xff\xff\xff\x82\xa3foo\xc4\x03\x80\x01\x02\xa3bar\x94\x01\x02\x03\x81\xa1a\x94\x01\x02\x03\x80\xff\xcb@\x00\xfc\xd3Z\x85\x87\x94'
 >>> umsgpack.unpackb(_)
@@ -27,7 +27,7 @@ A more complicated example:
 ```
 
 The more complicated example in Python 3:
-```
+``` python
 >>> umsgpack.packb([1, True, False, 0xffffffff, {u"foo": b"\x80\x01\x02", u"bar": [1,2,3, {u"a": [1,2,3,{}]}]}, -1, 2.12345])
 b'\x97\x01\xc3\xc2\xce\xff\xff\xff\xff\x82\xa3foo\xc4\x03\x80\x01\x02\xa3bar\x94\x01\x02\x03\x81\xa1a\x94\x01\x02\x03\x80\xff\xcb@\x00\xfc\xd3Z\x85\x87\x94'
 >>> umsgpack.unpackb(_)
@@ -36,7 +36,7 @@ b'\x97\x01\xc3\xc2\xce\xff\xff\xff\xff\x82\xa3foo\xc4\x03\x80\x01\x02\xa3bar\x94
 ```
 
 An example of encoding and decoding an application ext type:
-```
+``` python
 >>> # Create an Ext object with type 0x05 and data b"\x01\x02\x03"
 ... foo = umsgpack.Ext(0x05, b"\x01\x02\x03")
 >>> umsgpack.packb({u"special stuff": foo, u"awesome": True})
@@ -52,6 +52,19 @@ Ext Object
 b'\x01\x02\x03'
 >>> 
 ```
+## Compatibility Mode
+
+u-msgpack-python offers a compatibility mode for the old specification "raw" bytes msgpack type. When the compatibility mode is enabled, u-msgpack-python will serialize both unicode strings and bytes into the "raw" msgpack type, and deserialize the "raw" msgpack type into bytes. To enable compatibility mode, simply set the `compatibility` boolean of the umsgpack module to `True`.
+
+``` python
+>>> umsgpack.compatibility = True
+>>>
+>>> umsgpack.packb([u"some string", b"some bytes"])
+b'\x92\xabsome string\xaasome bytes'
+>>> umsgpack.unpackb(_)
+[b'some string', b'some bytes']
+>>> 
+```
 
 ## Exceptions
 
@@ -61,7 +74,7 @@ If an error occurs during packing, `umsgpack.packb()` will raise an exception de
 
 * `UnsupportedTypeException`: Object type not supported for packing.
 
-    ```
+    ``` python
     >>> # Attempt to pack set type
     ... umsgpack.packb(set([1,2,3]))
     ...
@@ -81,7 +94,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 
 * `TypeError`: Packed data is not type `str` (Python 2), or not type `bytes` (Python 3).
 
-    ```
+    ``` python
     >>> # Attempt to unpack non-str type data in Python 2
     ... umsgpack.unpackb(u"no good")
     ...
@@ -97,7 +110,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 
 * `InsufficientDataException`: Insufficient data to unpack encoded object.
 
-    ```
+    ``` python
     >>> # Attempt to unpack a cut-off encoded 32-bit unsigned int
     ... umsgpack.unpackb(b"\xce\xff\xff\xff")
     ...
@@ -115,7 +128,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 
     String bytes are strictly decoded with UTF-8. This exception is thrown if UTF-8 decoding of string bytes fails.
 
-    ```
+    ``` python
     >>> # Attempt to unpack the string "\x80\x81"
     ... umsgpack.unpackb(b"\xa2\x80\x81")
     ...
@@ -125,7 +138,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 
 * `ReservedCodeException`: msgpack reserved code encountered.
 
-    ```
+    ``` python
     >>> # Attempt to unpack reserved code 0xc1
     ... umsgpack.unpackb(b"\xc1")
     ...
@@ -137,7 +150,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 
     Python dictionaries only support keys that are instances of `collections.Hashable`, so while the map `{ { u'abc': True } : 5 }` has a msgpack encoding, it cannot be unpacked into a valid Python dictionary.
 
-    ```
+    ``` python
     >>> # Attempt to unpack { {} : False }
     ... umsgpack.unpackb(b"\x82\x80\xc2")
     ...
@@ -149,7 +162,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 
     Python dictionaries do not support duplicate keys, but msgpack maps may be encoded with duplicate keys.
 
-    ```
+    ``` python
     >>> # Attempt to unpack { 1: True, 1: False }
     ... umsgpack.unpackb(b"\x82\x01\xc3\x01\xc2")
     ...
