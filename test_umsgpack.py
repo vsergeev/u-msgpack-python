@@ -269,3 +269,11 @@ def test_unpack_compatibility():
 
     umsgpack.compatibility = False
 
+def test_ext_exceptions():
+    with pytest.raises(TypeError):
+        _ = umsgpack.Ext(-1, b"")
+    with pytest.raises(TypeError):
+        _ = umsgpack.Ext(128, b"")
+    with pytest.raises(TypeError):
+        _ = umsgpack.Ext(0, u"unicode string")
+

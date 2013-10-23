@@ -1,4 +1,4 @@
-# u-msgpack-python v1.0 - vsergeev at gmail
+# u-msgpack-python v1.4 - vsergeev at gmail
 #
 # u-msgpack-python is a Python 2 and Python 3 compatible serializer and
 # deserializer for msgpack written in pure Python. It supports the latest
@@ -14,8 +14,16 @@ import sys
 
 # Extension type for application code
 class Ext:
-    def __init__(self, ext_type, data):
-        self.type = ext_type
+    def __init__(self, type, data):
+        # Application ext type should be 0 <= type <= 127
+        if not isinstance(type, int) or not (type >= 0 and type <= 127):
+            raise TypeError("ext type out of range")
+        # Check data is type bytes
+        elif sys.version_info.major == 3 and not isinstance(data, bytes):
+            raise TypeError("ext data is not type \'bytes\'")
+        elif sys.version_info.major == 2 and not isinstance(data, str):
+            raise TypeError("ext data is not type \'str\'")
+        self.type = type
         self.data = data
 
     def __eq__(self, other):
@@ -276,7 +284,7 @@ def unpack_integer(code, read_fn):
 
 def unpack_reserved(code, read_fn):
     if code == b'\xc1':
-        raise ReservedCodeException("reserved code encountered: 0x%02x" % ord(code))
+        raise ReservedCodeException("encountered reserved code: 0x%02x" % ord(code))
     raise Exception("logic error, not reserved code: 0x%02x" % ord(code))
 
 def unpack_nil(code, read_fn):
@@ -411,14 +419,14 @@ def _unpackb(read_fn):
 # For Python 2, expects a str object
 def unpackb2(s):
     if not isinstance(s, str):
-        raise TypeError("expected packed data as type 'str'")
+        raise TypeError("packed data is not type 'str'")
     read_fn = byte_reader(s)
     return _unpackb(read_fn)
 
 # For Python 3, expects a bytes object
 def unpackb3(s):
     if not isinstance(s, bytes):
-        raise TypeError("expected packed data as type 'bytes'")
+        raise TypeError("packed data is not type 'bytes'")
     read_fn = byte_reader(s)
     return _unpackb(read_fn)
 
