@@ -54,7 +54,7 @@ b'\x01\x02\x03'
 ```
 ## Compatibility Mode
 
-u-msgpack-python offers a compatibility mode for the old specification "raw" bytes msgpack type. When the compatibility mode is enabled, u-msgpack-python will serialize both unicode strings and bytes into the "raw" msgpack type, and deserialize the "raw" msgpack type into bytes. To enable compatibility mode, simply set the `compatibility` boolean of the umsgpack module to `True`.
+u-msgpack-python offers a compatibility mode for the [old specification](https://github.com/msgpack/msgpack/blob/master/spec-old.md) "raw" bytes msgpack type. When the compatibility mode is enabled, u-msgpack-python will serialize both unicode strings and bytes into the "raw" msgpack type, and deserialize the "raw" msgpack type into bytes. To enable compatibility mode, simply set the `compatibility` boolean of the umsgpack module to `True`.
 
 ``` python
 >>> umsgpack.compatibility = True
