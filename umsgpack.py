@@ -19,9 +19,9 @@ class Ext:
         if not isinstance(type, int) or not (type >= 0 and type <= 127):
             raise TypeError("ext type out of range")
         # Check data is type bytes
-        elif sys.version_info.major == 3 and not isinstance(data, bytes):
+        elif sys.version_info[0] == 3 and not isinstance(data, bytes):
             raise TypeError("ext data is not type \'bytes\'")
-        elif sys.version_info.major == 2 and not isinstance(data, str):
+        elif sys.version_info[0] == 2 and not isinstance(data, str):
             raise TypeError("ext data is not type \'str\'")
         self.type = type
         self.data = data
@@ -449,7 +449,7 @@ def __init():
         _float_size = 32
 
     # Map packb and unpackb to the appropriate version
-    if sys.version_info.major == 3:
+    if sys.version_info[0] == 3:
         packb = packb3
         unpackb = unpackb3
     else:

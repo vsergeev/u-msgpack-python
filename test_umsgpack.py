@@ -118,8 +118,8 @@ composite_test_vectors = [
     [ "fix map", { b"\x80" : 0xffff }, b"\x81\xc4\x01\x80\xcd\xff\xff" ],
     [ "fix map", { True : None }, b"\x81\xc3\xc0" ],
     # 16-bit Map
-    [ "16-bit map", { k: 0x05 for k in range(16) }, b"\xde\x00\x10" + b"".join( [ struct.pack("B", i) + b"\x05" for i in range(16) ] ) ],
-    [ "16-bit map", { k: 0x05 for k in range(6000) }, b"\xde\x17\x70" + b"".join([ struct.pack("B", i) + b"\x05" for i in range(128)]) + b"".join([ b"\xcc" + struct.pack("B", i) + b"\x05" for i in range(128, 256)]) + b"".join([ b"\xcd" + struct.pack(">H", i) + b"\x05" for i in range(256, 6000)]) ],
+    [ "16-bit map", dict([(k, 0x05) for k in range(16)]), b"\xde\x00\x10" + b"".join( [ struct.pack("B", i) + b"\x05" for i in range(16) ] ) ],
+    [ "16-bit map", dict([(k, 0x05) for k in range(6000)]), b"\xde\x17\x70" + b"".join([ struct.pack("B", i) + b"\x05" for i in range(128)]) + b"".join([ b"\xcc" + struct.pack("B", i) + b"\x05" for i in range(128, 256)]) + b"".join([ b"\xcd" + struct.pack(">H", i) + b"\x05" for i in range(256, 6000)]) ],
     # Complex Array
     [ "complex array", [ True, 0x01, umsgpack.Ext(0x03, b"foo"), 0xff, { 1: False, 2: u"abc" }, b"\x80", [ 1, 2, 3], u"abc" ], b"\x98\xc3\x01\xc7\x03\x03\x66\x6f\x6f\xcc\xff\x82\x01\xc2\x02\xa3\x61\x62\x63\xc4\x01\x80\x93\x01\x02\x03\xa3\x61\x62\x63" ],
     # Complex Map
@@ -257,9 +257,9 @@ def test_unpack_compatibility():
         unpacked = umsgpack.unpackb(data)
 
         # Encoded raw should always unpack to bytes
-        if sys.version_info.major == 3 and isinstance(obj, str):
+        if sys.version_info[0] == 3 and isinstance(obj, str):
             _obj = obj.encode('utf-8')
-        elif sys.version_info.major == 2 and isinstance(obj, unicode):
+        elif sys.version_info[0] == 2 and isinstance(obj, unicode):
             _obj = bytes(obj)
         else:
             _obj = obj
