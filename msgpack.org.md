@@ -2,7 +2,24 @@
 
 u-msgpack-python is a lightweight [MessagePack](http://msgpack.org/) serializer and deserializer module, compatible with both Python 2 and Python 3. u-msgpack-python is fully compliant with the latest [MessagePack specification](https://github.com/msgpack/msgpack/blob/master/spec.md).
 
-u-msgpack-python is written in pure Python and is currently distributed as a single file: [umsgpack.py](https://github.com/vsergeev/u-msgpack-python/blob/master/umsgpack.py)
+u-msgpack-python is written in pure Python and is currently distributed as a single file: [umsgpack.py](umsgpack.py) and on PyPI: https://pypi.python.org/pypi/u-msgpack-python
+
+## Installation
+
+With pip:
+``` text
+$ pip install u-msgpack-python
+```
+
+With easy_install:
+``` text
+$ easy_install u-msgpack-python
+```
+
+or simply drop [umsgpack.py](https://raw.github.com/vsergeev/u-msgpack-python/master/umsgpack.py) into your project!
+``` text
+$ wget https://raw.github.com/vsergeev/u-msgpack-python/master/umsgpack.py
+```
 
 ## Examples
 
@@ -61,9 +78,9 @@ b'\x01\x02\x03'
 >>> 
 ```
 
-## More Information 
+## More Information
 
-See the [project page](https://github.com/vsergeev/u-msgpack-python) for more information on exceptions, behavior, and testing.
+See the [project page](https://github.com/vsergeev/u-msgpack-python) for more information on old specification compatibility mode, exceptions, behavior, and testing.
 
 ## License
 
