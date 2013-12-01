@@ -1,8 +1,8 @@
 # u-msgpack-python v1.4
 
-u-msgpack-python is a lightweight [MessagePack](http://msgpack.org/) serializer and deserializer module, compatible with both Python 2 and Python 3. u-msgpack-python is fully compliant with the latest [MessagePack specification](https://github.com/msgpack/msgpack/blob/master/spec.md).
+u-msgpack-python is a lightweight [MessagePack](http://msgpack.org/) serializer and deserializer module, compatible with both Python 2 and 3, as well CPython and PyPy implementations of Python. u-msgpack-python is fully compliant with the latest [MessagePack specification](https://github.com/msgpack/msgpack/blob/master/spec.md).
 
-u-msgpack-python is written in pure Python and is currently distributed as a single file: [umsgpack.py](umsgpack.py) and on PyPI: https://pypi.python.org/pypi/u-msgpack-python
+u-msgpack-python is written in pure Python and is currently distributed on PyPI: https://pypi.python.org/pypi/u-msgpack-python and as a single file: [umsgpack.py](https://raw.github.com/vsergeev/u-msgpack-python/master/umsgpack.py)
 
 ## Installation
 

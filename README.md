@@ -1,8 +1,8 @@
 # u-msgpack-python v1.4
 
-u-msgpack-python is a lightweight [MessagePack](http://msgpack.org/) serializer and deserializer module, compatible with both Python 2 and Python 3. u-msgpack-python is fully compliant with the latest [MessagePack specification](https://github.com/msgpack/msgpack/blob/master/spec.md). In particular, it supports the new binary, UTF-8 string, and application ext types.
+u-msgpack-python is a lightweight [MessagePack](http://msgpack.org/) serializer and deserializer module, compatible with both Python 2 and 3, as well CPython and PyPy implementations of Python. u-msgpack-python is fully compliant with the latest [MessagePack specification](https://github.com/msgpack/msgpack/blob/master/spec.md). In particular, it supports the new binary, UTF-8 string, and application ext types.
 
-u-msgpack-python is written in pure Python and is currently distributed as a single file: [umsgpack.py](umsgpack.py) and on PyPI: https://pypi.python.org/pypi/u-msgpack-python
+u-msgpack-python is written in pure Python and is currently distributed on PyPI: https://pypi.python.org/pypi/u-msgpack-python and as a single file: [umsgpack.py](https://raw.github.com/vsergeev/u-msgpack-python/master/umsgpack.py)
 
 ## Installation
 
@@ -211,7 +211,13 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 
 ## Testing
 
-u-msgpack-python's included unit tests may be run with [pytest](http://pytest.org). Simply invoke `py.test` or `py.test2` to test in either Python 3 or Python 2.
+u-msgpack-python's included unit tests may be run with `test_umsgpack.py`, under your favorite interpreter.
+
+``` text
+$ python test_umsgpack.py
+$ python2 test_umsgpack.py
+$ pypy test_umsgpack.py
+```
 
 ## License
 
