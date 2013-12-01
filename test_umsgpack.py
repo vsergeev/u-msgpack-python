@@ -1,8 +1,8 @@
 # Run test_umsgpack.py with your Python interpreter of choice to test the
 # correctness of u-msgpack-python!
 #
-#   $ python test_umsgpack.py
 #   $ python2 test_umsgpack.py
+#   $ python3 test_umsgpack.py
 #   $ pypy test_umsgpack.py
 #
 

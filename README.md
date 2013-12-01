@@ -214,8 +214,8 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 u-msgpack-python's included unit tests may be run with `test_umsgpack.py`, under your favorite interpreter.
 
 ``` text
-$ python test_umsgpack.py
 $ python2 test_umsgpack.py
+$ python3 test_umsgpack.py
 $ pypy test_umsgpack.py
 ```
 
