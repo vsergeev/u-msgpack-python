@@ -1,14 +1,15 @@
-# Run tests with
-#   $ py.test       # Python 3
-# or
-#   $ py.test2      # Python 2
+# Run test_umsgpack.py with your Python interpreter of choice to test the
+# correctness of u-msgpack-python!
 #
-# (Actual Python version invoked may depend on your system.)
+#   $ python test_umsgpack.py
+#   $ python2 test_umsgpack.py
+#   $ pypy test_umsgpack.py
+#
 
 import umsgpack
 import sys
 import struct
-import pytest
+import unittest
 
 single_test_vectors = [
     # None
@@ -208,72 +209,101 @@ compatibility_test_vectors = [
 
 ################################################################################
 
-def test_pack_single():
-    for (name, obj, data) in single_test_vectors:
-        print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
-        assert umsgpack.packb(obj) == data
+class TestUmsgpack(unittest.TestCase):
+    def test_pack_single(self):
+        for (name, obj, data) in single_test_vectors:
+            print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
+            self.assertEqual(umsgpack.packb(obj), data)
 
-def test_pack_composite():
-    for (name, obj, data) in composite_test_vectors:
-        print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
-        assert umsgpack.packb(obj) == data
+    def test_pack_composite(self):
+        for (name, obj, data) in composite_test_vectors:
+            print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
+            self.assertEqual(umsgpack.packb(obj), data)
 
-def test_pack_exceptions():
-    for (name, obj, exception) in pack_exception_test_vectors:
-        print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
-        with pytest.raises(exception): umsgpack.packb(obj)
+    def test_pack_exceptions(self):
+        for (name, obj, exception) in pack_exception_test_vectors:
+            print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
+            try:
+                umsgpack.packb(obj)
+            except Exception as e:
+                self.assertTrue(isinstance(e, exception))
 
-def test_unpack_single():
-    for (name, obj, data) in single_test_vectors:
-        print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
-        unpacked = umsgpack.unpackb(data)
-        assert isinstance(unpacked, type(obj))
-        assert unpacked == obj
+    def test_unpack_single(self):
+        for (name, obj, data) in single_test_vectors:
+            print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
+            unpacked = umsgpack.unpackb(data)
 
-def test_unpack_composite():
-    for (name, obj, data) in composite_test_vectors:
-        print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
-        assert umsgpack.unpackb(data) == obj
+            # In Python2, we have both int and long integer types, but which
+            # one we end up with depends on the architecture (32-bit/64-bit)
+            if sys.version_info[0] == 2:
+                # Allow both {int,long} -> unpackb -> {int,long}
+                if isinstance(obj, int) or isinstance(obj, long):
+                    self.assertTrue(isinstance(unpacked, int) or isinstance(unpacked, long))
+                else:
+                    self.assertTrue(isinstance(unpacked, type(obj)))
+            # In Python3, we only have the int integer type
+            else:
+                self.assertTrue(isinstance(unpacked, type(obj)))
 
-def test_unpack_exceptions():
-    for (name, data, exception) in unpack_exception_test_vectors:
-        print("\tTesting %s" % name)
-        with pytest.raises(exception): umsgpack.unpackb(data)
+            self.assertEqual(unpacked, obj)
 
-def test_pack_compatibility():
-    umsgpack.compatibility = True
+    def test_unpack_composite(self):
+        for (name, obj, data) in composite_test_vectors:
+            print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
+            self.assertEqual(umsgpack.unpackb(data), obj)
 
-    for (name, obj, data) in compatibility_test_vectors:
-        print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
-        assert umsgpack.packb(obj) == data
+    def test_unpack_exceptions(self):
+        for (name, data, exception) in unpack_exception_test_vectors:
+            print("\tTesting %s" % name)
+            try:
+                umsgpack.unpackb(data)
+            except Exception as e:
+                self.assertTrue(isinstance(e, exception))
 
-    umsgpack.compatibility = False
+    def test_pack_compatibility(self):
+        umsgpack.compatibility = True
 
-def test_unpack_compatibility():
-    umsgpack.compatibility = True
+        for (name, obj, data) in compatibility_test_vectors:
+            print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
+            self.assertEqual(umsgpack.packb(obj), data)
 
-    for (name, obj, data) in compatibility_test_vectors:
-        print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
-        unpacked = umsgpack.unpackb(data)
+        umsgpack.compatibility = False
 
-        # Encoded raw should always unpack to bytes
-        if sys.version_info[0] == 3 and isinstance(obj, str):
-            _obj = obj.encode('utf-8')
-        elif sys.version_info[0] == 2 and isinstance(obj, unicode):
-            _obj = bytes(obj)
-        else:
-            _obj = obj
+    def test_unpack_compatibility(self):
+        umsgpack.compatibility = True
 
-        assert isinstance(unpacked, type(_obj))
-        assert unpacked == _obj
+        for (name, obj, data) in compatibility_test_vectors:
+            print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
+            unpacked = umsgpack.unpackb(data)
 
-    umsgpack.compatibility = False
+            # Encoded raw should always unpack to bytes in compatibility mode,
+            # so convert any string obj to bytes before comparison
+            if sys.version_info[0] == 3 and isinstance(obj, str):
+                _obj = obj.encode('utf-8')
+            elif sys.version_info[0] == 2 and isinstance(obj, unicode):
+                _obj = bytes(obj)
+            else:
+                _obj = obj
 
-def test_ext_exceptions():
-    with pytest.raises(TypeError):
-        _ = umsgpack.Ext(-1, b"")
-    with pytest.raises(TypeError):
-        _ = umsgpack.Ext(128, b"")
-    with pytest.raises(TypeError):
-        _ = umsgpack.Ext(0, u"unicode string")
+            self.assertTrue(isinstance(unpacked, type(_obj)))
+            self.assertEqual(unpacked, _obj)
+
+        umsgpack.compatibility = False
+
+    def test_ext_exceptions(self):
+        try:
+            _ = umsgpack.Ext(-1, b"")
+        except Exception as e:
+            self.assertTrue(isinstance(e, TypeError))
+        try:
+            _ = umsgpack.Ext(128, b"")
+        except Exception as e:
+            self.assertTrue(isinstance(e, TypeError))
+        try:
+            _ = umsgpack.Ext(0, u"unicode string")
+        except Exception as e:
+            self.assertTrue(isinstance(e, TypeError))
+
+if __name__ == '__main__':
+    unittest.main()
 
