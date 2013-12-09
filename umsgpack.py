@@ -1,8 +1,10 @@
-# u-msgpack-python v1.4 - vsergeev at gmail
+# u-msgpack-python v1.5 - vsergeev at gmail
 #
-# u-msgpack-python is a Python 2 and Python 3 compatible serializer and
-# deserializer for msgpack written in pure Python. It supports the latest
-# msgpack spec, as of 09/29/2013, namely the utf-8 string, binary, and ext
+# u-msgpack-python is a lightweight MessagePack serializer and deserializer
+# module, compatible with both Python 2 and 3, as well CPython and PyPy
+# implementations of Python. u-msgpack-python is fully compliant with the
+# latest MessagePack specification.com/msgpack/msgpack/blob/master/spec.md). In
+# particular, it supports the new binary, UTF-8 string, and application ext
 # types.
 #
 
@@ -71,12 +73,19 @@ class KeyDuplicateException(UnpackException): pass
 
 ################################################################################
 
+# Exported functions and variables set in __init()
+packb = None
+unpackb = None
+compatibility = False
+
+################################################################################
+
 # You may notice struct.pack("B", x) instead of the simpler chr(x) in the code
 # below. This is to allow for seamless Python 2 and 3 compatibility, as chr(x)
 # has a str return type instead of bytes in Python 3, and struct.pack(...) has
 # the right return type in both versions.
 
-def pack_integer(x):
+def _pack_integer(x):
     if x < 0:
         if x >= -32:
             return struct.pack("b", x)
@@ -104,19 +113,19 @@ def pack_integer(x):
         else:
             raise UnsupportedTypeException("huge unsigned int")
 
-def pack_nil(x):
+def _pack_nil(x):
     return b"\xc0"
 
-def pack_boolean(x):
+def _pack_boolean(x):
     return b"\xc3" if x else b"\xc2"
 
-def pack_float(x):
+def _pack_float(x):
     if _float_size == 64:
         return b"\xcb" + struct.pack(">d", x)
     else:
         return b"\xca" + struct.pack(">f", x)
 
-def pack_string(x):
+def _pack_string(x):
     if len(x) <= 31:
         return struct.pack("B", 0xa0 | len(x)) + x.encode('utf-8')
     elif len(x) <= 2**8-1:
@@ -128,7 +137,7 @@ def pack_string(x):
     else:
         raise UnsupportedTypeException("huge string")
 
-def pack_binary(x):
+def _pack_binary(x):
     if len(x) <= 2**8-1:
         return b"\xc4" + struct.pack("B", len(x)) + x
     elif len(x) <= 2**16-1:
@@ -138,7 +147,7 @@ def pack_binary(x):
     else:
         raise UnsupportedTypeException("huge binary string")
 
-def pack_oldspec_raw(x):
+def _pack_oldspec_raw(x):
     if len(x) <= 31:
         return struct.pack("B", 0xa0 | len(x)) + x
     elif len(x) <= 2**16-1:
@@ -148,7 +157,7 @@ def pack_oldspec_raw(x):
     else:
         raise UnsupportedTypeException("huge raw string")
 
-def pack_ext(x):
+def _pack_ext(x):
     if len(x.data) == 1:
         return b"\xd4" + struct.pack("B", x.type & 0xff) + x.data
     elif len(x.data) == 2:
@@ -168,7 +177,7 @@ def pack_ext(x):
     else:
         raise UnsupportedTypeException("huge ext data")
 
-def pack_array(x):
+def _pack_array(x):
     if len(x) <= 15:
         s = struct.pack("B", 0x90 | len(x))
     elif len(x) <= 2**16-1:
@@ -183,7 +192,7 @@ def pack_array(x):
 
     return s
 
-def pack_map(x):
+def _pack_map(x):
     if len(x) <= 15:
         s = struct.pack("B", 0x80 | len(x))
     elif len(x) <= 2**16-1:
@@ -200,66 +209,66 @@ def pack_map(x):
     return s
 
 # Pack for Python 2, with 'unicode' type, 'str' type, and 'long' type
-def packb2(x):
+def _packb2(x):
     global compatibility
 
     if x is None:
-        return pack_nil(x)
+        return _pack_nil(x)
     elif isinstance(x, bool):
-        return pack_boolean(x)
+        return _pack_boolean(x)
     elif isinstance(x, int) or isinstance(x, long):
-        return pack_integer(x)
+        return _pack_integer(x)
     elif isinstance(x, float):
-        return pack_float(x)
+        return _pack_float(x)
     elif compatibility and isinstance(x, unicode):
-        return pack_oldspec_raw(bytes(x))
+        return _pack_oldspec_raw(bytes(x))
     elif compatibility and isinstance(x, bytes):
-        return pack_oldspec_raw(x)
+        return _pack_oldspec_raw(x)
     elif isinstance(x, unicode):
-        return pack_string(x)
+        return _pack_string(x)
     elif isinstance(x, str):
-        return pack_binary(x)
+        return _pack_binary(x)
     elif isinstance(x, list) or isinstance(x, tuple):
-        return pack_array(x)
+        return _pack_array(x)
     elif isinstance(x, dict):
-        return pack_map(x)
+        return _pack_map(x)
     elif isinstance(x, Ext):
-        return pack_ext(x)
+        return _pack_ext(x)
     else:
         raise UnsupportedTypeException("unsupported type: %s" % str(type(x)))
 
 # Pack for Python 3, with unicode 'str' type, 'bytes' type, and no 'long' type
-def packb3(x):
+def _packb3(x):
     global compatibility
 
     if x is None:
-        return pack_nil(x)
+        return _pack_nil(x)
     elif isinstance(x, bool):
-        return pack_boolean(x)
+        return _pack_boolean(x)
     elif isinstance(x, int):
-        return pack_integer(x)
+        return _pack_integer(x)
     elif isinstance(x, float):
-        return pack_float(x)
+        return _pack_float(x)
     elif compatibility and isinstance(x, str):
-        return pack_oldspec_raw(x.encode('utf-8'))
+        return _pack_oldspec_raw(x.encode('utf-8'))
     elif compatibility and isinstance(x, bytes):
-        return pack_oldspec_raw(x)
+        return _pack_oldspec_raw(x)
     elif isinstance(x, str):
-        return pack_string(x)
+        return _pack_string(x)
     elif isinstance(x, bytes):
-        return pack_binary(x)
+        return _pack_binary(x)
     elif isinstance(x, list) or isinstance(x, tuple):
-        return pack_array(x)
+        return _pack_array(x)
     elif isinstance(x, dict):
-        return pack_map(x)
+        return _pack_map(x)
     elif isinstance(x, Ext):
-        return pack_ext(x)
+        return _pack_ext(x)
     else:
         raise UnsupportedTypeException("unsupported type: %s" % str(type(x)))
 
 ################################################################################
 
-def unpack_integer(code, read_fn):
+def _unpack_integer(code, read_fn):
     if (ord(code) & 0xe0) == 0xe0:
         return struct.unpack("b", code)[0]
     elif code == b'\xd0':
@@ -282,31 +291,31 @@ def unpack_integer(code, read_fn):
         return struct.unpack(">Q", read_fn(8))[0]
     raise Exception("logic error, not int: 0x%02x" % ord(code))
 
-def unpack_reserved(code, read_fn):
+def _unpack_reserved(code, read_fn):
     if code == b'\xc1':
         raise ReservedCodeException("encountered reserved code: 0x%02x" % ord(code))
     raise Exception("logic error, not reserved code: 0x%02x" % ord(code))
 
-def unpack_nil(code, read_fn):
+def _unpack_nil(code, read_fn):
     if code == b'\xc0':
         return None
     raise Exception("logic error, not nil: 0x%02x" % ord(code))
 
-def unpack_boolean(code, read_fn):
+def _unpack_boolean(code, read_fn):
     if code == b'\xc2':
         return False
     elif code == b'\xc3':
         return True
     raise Exception("logic error, not boolean: 0x%02x" % ord(code))
 
-def unpack_float(code, read_fn):
+def _unpack_float(code, read_fn):
     if code == b'\xca':
         return struct.unpack(">f", read_fn(4))[0]
     elif code == b'\xcb':
         return struct.unpack(">d", read_fn(8))[0]
     raise Exception("logic error, not float: 0x%02x" % ord(code))
 
-def unpack_string(code, read_fn):
+def _unpack_string(code, read_fn):
     if (ord(code) & 0xe0) == 0xa0:
         length = ord(code) & ~0xe0
     elif code == b'\xd9':
@@ -328,7 +337,7 @@ def unpack_string(code, read_fn):
     except UnicodeDecodeError:
         raise InvalidStringException("unpacked string is not utf-8")
 
-def unpack_binary(code, read_fn):
+def _unpack_binary(code, read_fn):
     if code == b'\xc4':
         length = struct.unpack("B", read_fn(1))[0]
     elif code == b'\xc5':
@@ -340,7 +349,7 @@ def unpack_binary(code, read_fn):
 
     return read_fn(length)
 
-def unpack_ext(code, read_fn):
+def _unpack_ext(code, read_fn):
     if code == b'\xd4':
         length = 1
     elif code == b'\xd5':
@@ -362,7 +371,7 @@ def unpack_ext(code, read_fn):
 
     return Ext(ord(read_fn(1)), read_fn(length))
 
-def unpack_array(code, read_fn):
+def _unpack_array(code, read_fn):
     if (ord(code) & 0xf0) == 0x90:
         length = (ord(code) & ~0xf0)
     elif code == b'\xdc':
@@ -374,7 +383,7 @@ def unpack_array(code, read_fn):
 
     return [_unpackb(read_fn) for i in range(length)]
 
-def unpack_map(code, read_fn):
+def _unpack_map(code, read_fn):
     if (ord(code) & 0xf0) == 0x80:
         length = (ord(code) & ~0xf0)
     elif code == b'\xde':
@@ -402,7 +411,7 @@ def unpack_map(code, read_fn):
 
 ########################################
 
-def byte_reader(s):
+def _byte_reader(s):
     i = [0]
     def read_fn(n):
         if (i[0]+n > len(s)):
@@ -417,27 +426,27 @@ def _unpackb(read_fn):
     return _unpack_dispatch_table[code](code, read_fn)
 
 # For Python 2, expects a str object
-def unpackb2(s):
+def _unpackb2(s):
     if not isinstance(s, str):
         raise TypeError("packed data is not type 'str'")
-    read_fn = byte_reader(s)
+    read_fn = _byte_reader(s)
     return _unpackb(read_fn)
 
 # For Python 3, expects a bytes object
-def unpackb3(s):
+def _unpackb3(s):
     if not isinstance(s, bytes):
         raise TypeError("packed data is not type 'bytes'")
-    read_fn = byte_reader(s)
+    read_fn = _byte_reader(s)
     return _unpackb(read_fn)
 
 ################################################################################
 
 def __init():
-    global _float_size
     global packb
     global unpackb
-    global _unpack_dispatch_table
     global compatibility
+    global _float_size
+    global _unpack_dispatch_table
 
     # Compatibility mode for handling strings/bytes with the old specification
     compatibility = False
@@ -450,63 +459,63 @@ def __init():
 
     # Map packb and unpackb to the appropriate version
     if sys.version_info[0] == 3:
-        packb = packb3
-        unpackb = unpackb3
+        packb = _packb3
+        unpackb = _unpackb3
     else:
-        packb = packb2
-        unpackb = unpackb2
+        packb = _packb2
+        unpackb = _unpackb2
 
     # Build a dispatch table for fast lookup of unpacking function
 
     _unpack_dispatch_table = {}
     # Fix uint
     for code in range(0, 0x7f+1):
-        _unpack_dispatch_table[struct.pack("B", code)] = unpack_integer
+        _unpack_dispatch_table[struct.pack("B", code)] = _unpack_integer
     # Fix map
     for code in range(0x80, 0x8f+1):
-        _unpack_dispatch_table[struct.pack("B", code)] = unpack_map
+        _unpack_dispatch_table[struct.pack("B", code)] = _unpack_map
     # Fix array
     for code in range(0x90, 0x9f+1):
-        _unpack_dispatch_table[struct.pack("B", code)] = unpack_array
+        _unpack_dispatch_table[struct.pack("B", code)] = _unpack_array
     # Fix str
     for code in range(0xa0, 0xbf+1):
-        _unpack_dispatch_table[struct.pack("B", code)] = unpack_string
+        _unpack_dispatch_table[struct.pack("B", code)] = _unpack_string
     # Nil
-    _unpack_dispatch_table[b'\xc0'] = unpack_nil
+    _unpack_dispatch_table[b'\xc0'] = _unpack_nil
     # Reserved
-    _unpack_dispatch_table[b'\xc1'] = unpack_reserved
+    _unpack_dispatch_table[b'\xc1'] = _unpack_reserved
     # Boolean
-    _unpack_dispatch_table[b'\xc2'] = unpack_boolean
-    _unpack_dispatch_table[b'\xc3'] = unpack_boolean
+    _unpack_dispatch_table[b'\xc2'] = _unpack_boolean
+    _unpack_dispatch_table[b'\xc3'] = _unpack_boolean
     # Bin
     for code in range(0xc4, 0xc6+1):
-        _unpack_dispatch_table[struct.pack("B", code)] = unpack_binary
+        _unpack_dispatch_table[struct.pack("B", code)] = _unpack_binary
     # Ext
     for code in range(0xc7, 0xc9+1):
-        _unpack_dispatch_table[struct.pack("B", code)] = unpack_ext
+        _unpack_dispatch_table[struct.pack("B", code)] = _unpack_ext
     # Float
-    _unpack_dispatch_table[b'\xca'] = unpack_float
-    _unpack_dispatch_table[b'\xcb'] = unpack_float
+    _unpack_dispatch_table[b'\xca'] = _unpack_float
+    _unpack_dispatch_table[b'\xcb'] = _unpack_float
     # Uint
     for code in range(0xcc, 0xcf+1):
-        _unpack_dispatch_table[struct.pack("B", code)] = unpack_integer
+        _unpack_dispatch_table[struct.pack("B", code)] = _unpack_integer
     # Int
     for code in range(0xd0, 0xd3+1):
-        _unpack_dispatch_table[struct.pack("B", code)] = unpack_integer
+        _unpack_dispatch_table[struct.pack("B", code)] = _unpack_integer
     # Fixext
     for code in range(0xd4, 0xd8+1):
-        _unpack_dispatch_table[struct.pack("B", code)] = unpack_ext
+        _unpack_dispatch_table[struct.pack("B", code)] = _unpack_ext
     # String
     for code in range(0xd9, 0xdb+1):
-        _unpack_dispatch_table[struct.pack("B", code)] = unpack_string
+        _unpack_dispatch_table[struct.pack("B", code)] = _unpack_string
     # Array
-    _unpack_dispatch_table[b'\xdc'] = unpack_array
-    _unpack_dispatch_table[b'\xdd'] = unpack_array
+    _unpack_dispatch_table[b'\xdc'] = _unpack_array
+    _unpack_dispatch_table[b'\xdd'] = _unpack_array
     # Map
-    _unpack_dispatch_table[b'\xde'] = unpack_map
-    _unpack_dispatch_table[b'\xdf'] = unpack_map
+    _unpack_dispatch_table[b'\xde'] = _unpack_map
+    _unpack_dispatch_table[b'\xdf'] = _unpack_map
     # Negative fixint
     for code in range(0xe0, 0xff+1):
-        _unpack_dispatch_table[struct.pack("B", code)] = unpack_integer
+        _unpack_dispatch_table[struct.pack("B", code)] = _unpack_integer
 
 __init()

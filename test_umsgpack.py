@@ -206,6 +206,22 @@ compatibility_test_vectors = [
     [ "32-bit raw", b"b" * 65536, b"\xdb\x00\x01\x00\x00" + b"b" * 65536 ],
 ]
 
+# These are the only global variables that should be exported by umsgpack
+exported_vars_test_vector = [
+    "Ext",
+    "PackException",
+    "UnpackException",
+    "UnsupportedTypeException",
+    "InsufficientDataException",
+    "InvalidStringException",
+    "ReservedCodeException",
+    "KeyNotPrimitiveException",
+    "KeyDuplicateException",
+    "packb",
+    "unpackb",
+    "compatibility",
+]
+
 
 ################################################################################
 
@@ -303,6 +319,16 @@ class TestUmsgpack(unittest.TestCase):
             _ = umsgpack.Ext(0, u"unicode string")
         except Exception as e:
             self.assertTrue(isinstance(e, TypeError))
+
+    def test_namespacing(self):
+        # Get a list of global variables from umsgpack module
+        exported_vars = list(filter(lambda x: not x.startswith("_"), dir(umsgpack)))
+        # Ignore struct, collections, and sys imports
+        exported_vars = list(filter(lambda x: x != "struct" and x != "collections" and x != "sys", exported_vars))
+
+        self.assertTrue(len(exported_vars) == len(exported_vars_test_vector))
+        for var in exported_vars_test_vector:
+            self.assertTrue(var in exported_vars)
 
 if __name__ == '__main__':
     unittest.main()
