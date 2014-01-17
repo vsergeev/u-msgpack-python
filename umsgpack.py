@@ -30,6 +30,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
+"""
+u-msgpack-python v1.5 - vsergeev at gmail
+https://github.com/vsergeev/u-msgpack-python
+
+u-msgpack-python is a lightweight MessagePack serializer and deserializer
+module, compatible with both Python 2 and 3, as well CPython and PyPy
+implementations of Python. u-msgpack-python is fully compliant with the
+latest MessagePack specification.com/msgpack/msgpack/blob/master/spec.md). In
+particular, it supports the new binary, UTF-8 string, and application ext
+types.
+
+License: MIT
+"""
 
 import struct
 import collections
@@ -37,9 +50,34 @@ import sys
 
 ################################################################################
 
-# Extension type for application code
+# Extension type for application-specific types and data
 class Ext:
+    """
+    The Ext class facilitates creating a serializable extension object to store
+    an application-specific type and data byte array.
+    """
+
     def __init__(self, type, data):
+        """
+        Construct a new Ext object.
+
+        Args:
+            type: application-specific type integer from 0 to 127
+            data: application-specific data byte array
+
+        Raises:
+            TypeError:
+                Specified ext type is outside of 0 to 127 range.
+
+        Example:
+        >>> foo = umsgpack.Ext(0x05, b"\x01\x02\x03")
+        >>> umsgpack.packb({u"special stuff": foo, u"awesome": True})
+        '\x82\xa7awesome\xc3\xadspecial stuff\xc7\x03\x05\x01\x02\x03'
+        >>> bar = umsgpack.unpackb(_)
+        >>> print(bar["special stuff"])
+        Ext Object (Type: 0x05, Data: 01 02 03)
+        >>>
+        """
         # Application ext type should be 0 <= type <= 127
         if not isinstance(type, int) or not (type >= 0 and type <= 127):
             raise TypeError("ext type out of range")
@@ -52,14 +90,23 @@ class Ext:
         self.data = data
 
     def __eq__(self, other):
+        """
+        Compare this Ext object with another for equality.
+        """
         return (isinstance(other, self.__class__) and
                 self.type == other.type and
                 self.data == other.data)
 
     def __ne__(self, other):
+        """
+        Compare this Ext object with another for inequality.
+        """
         return not self.__eq__(other)
 
     def __str__(self):
+        """
+        String representation of this Ext object.
+        """
         s = "Ext Object (Type: 0x%02x, Data: " % self.type
         for i in range(min(len(self.data), 8)):
             if i > 0:
@@ -76,29 +123,57 @@ class Ext:
 ################################################################################
 
 # Base Exception classes
-class PackException(Exception): pass
-class UnpackException(Exception): pass
+class PackException(Exception):
+    "Base class for exceptions encountered during packing."
+    pass
+class UnpackException(Exception):
+    "Base class for exceptions encountered during unpacking."
+    pass
 
-# Packing error: Object type not supported for packing.
-class UnsupportedTypeException(PackException): pass
+# Packing error
+class UnsupportedTypeException(PackException):
+    "Object type not supported for packing."
+    pass
 
-# Unpacking error: Insufficient data to unpack encoded object.
-class InsufficientDataException(UnpackException): pass
-# Unpacking error: Invalid string (not UTF-8) encountered.
-class InvalidStringException(UnpackException): pass
-# Unpacking error: Reserved code encountered.
-class ReservedCodeException(UnpackException): pass
-# Unpacking error: Unhashable key encountered during map unpacking.
-class KeyNotPrimitiveException(UnpackException): pass
-# Unpacking error: Duplicate key encountered during map unpacking.
-class KeyDuplicateException(UnpackException): pass
+# Unpacking error
+class InsufficientDataException(UnpackException):
+    "Insufficient data to unpack the encoded object."
+    pass
+class InvalidStringException(UnpackException):
+    "Invalid UTF-8 string encountered during unpacking."
+    pass
+class ReservedCodeException(UnpackException):
+    "Reserved code encountered during unpacking."
+    pass
+class UnhashableKeyException(UnpackException):
+    """
+    Unhashable key encountered during map unpacking.
+    The serialized map cannot be deserialized into a Python dictionary.
+    """
+    pass
+class DuplicateKeyException(UnpackException):
+    "Duplicate key encountered during map unpacking."
+    pass
+
+# Backwards compatibility
+KeyNotPrimitiveException = UnhashableKeyException
+KeyDuplicateException = DuplicateKeyException
 
 ################################################################################
 
 # Exported functions and variables set in __init()
 packb = None
 unpackb = None
+
 compatibility = False
+"""
+Compatibility mode boolean.
+
+When compatibility mode is enabled, u-msgpack-python will serialize both
+unicode strings and bytes into the old "raw" msgpack type, and deserialize the
+"raw" msgpack type into bytes. This provides backwards compatibility with the
+old MessagePack specification.
+"""
 
 ################################################################################
 
@@ -233,6 +308,24 @@ def _pack_map(x):
 
 # Pack for Python 2, with 'unicode' type, 'str' type, and 'long' type
 def _packb2(x):
+    """
+    Serialize a Python object into MessagePack bytes.
+
+    Args:
+        x: Python object
+
+    Returns:
+        A 'str' containing the serialized bytes.
+
+    Raises:
+        UnsupportedType(PackException):
+            Object type not supported for packing.
+
+    Example:
+    >>> umsgpack.packb({u"compact": True, u"schema": 0})
+    '\x82\xa7compact\xc3\xa6schema\x00'
+    >>>
+    """
     global compatibility
 
     if x is None:
@@ -262,6 +355,24 @@ def _packb2(x):
 
 # Pack for Python 3, with unicode 'str' type, 'bytes' type, and no 'long' type
 def _packb3(x):
+    """
+    Serialize a Python object into MessagePack bytes.
+
+    Args:
+        x: Python object
+
+    Returns:
+        A 'bytes' containing the serialized bytes.
+
+    Raises:
+        UnsupportedType(PackException):
+            Object type not supported for packing.
+
+    Example:
+    >>> umsgpack.packb({u"compact": True, u"schema": 0})
+    b'\x82\xa7compact\xc3\xa6schema\x00'
+    >>>
+    """
     global compatibility
 
     if x is None:
@@ -422,9 +533,9 @@ def _unpack_map(code, read_fn):
         k = _unpackb(read_fn)
 
         if not isinstance(k, collections.Hashable):
-            raise KeyNotPrimitiveException("encountered non-primitive key type: %s" % str(type(k)))
+            raise UnhashableKeyException("encountered unhashable key type: %s" % str(type(k)))
         elif k in d:
-            raise KeyDuplicateException("encountered duplicate key: %s, %s" % (str(k), str(type(k))))
+            raise DuplicateKeyException("encountered duplicate key: %s, %s" % (str(k), str(type(k))))
 
         # Unpack value
         v = _unpackb(read_fn)
@@ -450,6 +561,35 @@ def _unpackb(read_fn):
 
 # For Python 2, expects a str object
 def _unpackb2(s):
+    """
+    Deserialize MessagePack bytes into a Python object.
+
+    Args:
+        s: a 'str' containing the MessagePack serialized bytes.
+
+    Returns:
+        A deserialized Python object.
+
+    Raises:
+        TypeError:
+            Packed data is not type 'str'.
+        InsufficientDataException(UnpackException):
+            Insufficient data to unpack the encoded object.
+        InvalidStringException(UnpackException):
+            Invalid UTF-8 string encountered during unpacking.
+        ReservedCodeException(UnpackException):
+            Reserved code encountered during unpacking.
+        UnhashableKeyException(UnpackException):
+            Unhashable key encountered during map unpacking.
+            The serialized map cannot be deserialized into a Python dictionary.
+        DuplicateKeyException(UnpackException):
+            Duplicate key encountered during map unpacking.
+
+    Example:
+    >>> umsgpack.unpackb(b'\x82\xa7compact\xc3\xa6schema\x00')
+    {u'compact': True, u'schema': 0}
+    >>>
+    """
     if not isinstance(s, str):
         raise TypeError("packed data is not type 'str'")
     read_fn = _byte_reader(s)
@@ -457,6 +597,35 @@ def _unpackb2(s):
 
 # For Python 3, expects a bytes object
 def _unpackb3(s):
+    """
+    Deserialize MessagePack bytes into a Python object.
+
+    Args:
+        s: a 'bytes' containing the MessagePack serialized bytes.
+
+    Returns:
+        A deserialized Python object.
+
+    Raises:
+        TypeError:
+            Packed data is not type 'bytes'.
+        InsufficientDataException(UnpackException):
+            Insufficient data to unpack the encoded object.
+        InvalidStringException(UnpackException):
+            Invalid UTF-8 string encountered during unpacking.
+        ReservedCodeException(UnpackException):
+            Reserved code encountered during unpacking.
+        UnhashableKeyException(UnpackException):
+            Unhashable key encountered during map unpacking.
+            The serialized map cannot be deserialized into a Python dictionary.
+        DuplicateKeyException(UnpackException):
+            Duplicate key encountered during map unpacking.
+
+    Example:
+    >>> umsgpack.unpackb(b'\x82\xa7compact\xc3\xa6schema\x00')
+    {'compact': True, 'schema': 0}
+    >>>
+    """
     if not isinstance(s, bytes):
         raise TypeError("packed data is not type 'bytes'")
     read_fn = _byte_reader(s)
