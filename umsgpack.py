@@ -164,6 +164,8 @@ KeyDuplicateException = DuplicateKeyException
 # Exported functions and variables set in __init()
 packb = None
 unpackb = None
+dumps = None
+loads = None
 
 compatibility = False
 """
@@ -636,6 +638,8 @@ def _unpackb3(s):
 def __init():
     global packb
     global unpackb
+    global dumps
+    global loads
     global compatibility
     global _float_size
     global _unpack_dispatch_table
@@ -652,10 +656,14 @@ def __init():
     # Map packb and unpackb to the appropriate version
     if sys.version_info[0] == 3:
         packb = _packb3
+        dumps = _packb3
         unpackb = _unpackb3
+        loads = _unpackb3
     else:
         packb = _packb2
+        dumps = _packb2
         unpackb = _unpackb2
+        loads = _unpackb2
 
     # Build a dispatch table for fast lookup of unpacking function
 

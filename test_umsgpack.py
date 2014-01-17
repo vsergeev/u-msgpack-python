@@ -225,6 +225,8 @@ exported_vars_test_vector = [
     "KeyDuplicateException",
     "packb",
     "unpackb",
+    "dumps",
+    "loads",
     "compatibility",
 ]
 
