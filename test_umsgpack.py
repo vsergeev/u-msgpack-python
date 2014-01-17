@@ -227,9 +227,9 @@ exported_vars_test_vector = [
     "unpackb",
     "dumps",
     "loads",
+    "version",
     "compatibility",
 ]
-
 
 ################################################################################
 

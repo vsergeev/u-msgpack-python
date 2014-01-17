@@ -44,6 +44,9 @@ types.
 License: MIT
 """
 
+version = (1,5)
+"Module version tuple"
+
 import struct
 import collections
 import sys
