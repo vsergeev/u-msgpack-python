@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Run test_umsgpack.py with your Python interpreter of choice to test the
 # correctness of u-msgpack-python!
 #
@@ -75,6 +76,8 @@ single_test_vectors = [
     [ "16-bit string", u"c" * 65535, b"\xda\xff\xff" + b"c" * 65535 ],
     # 32-bit String
     [ "32-bit string", u"b" * 65536, b"\xdb\x00\x01\x00\x00" + b"b" * 65536 ],
+    # Wide character String
+    [ "wide char string", u"Allagbé", b"\xa8Allagb\xc3\xa9" ],
     # 8-bit Binary
     [ "8-bit binary", b"\x80" * 1, b"\xc4\x01" + b"\x80" * 1 ],
     [ "8-bit binary", b"\x80" * 32, b"\xc4\x20" + b"\x80" * 32 ],
@@ -228,17 +231,20 @@ exported_vars_test_vector = [
 class TestUmsgpack(unittest.TestCase):
     def test_pack_single(self):
         for (name, obj, data) in single_test_vectors:
-            print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
+            obj_repr = repr(obj)
+            print("\tTesting %s: object %s" % (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
             self.assertEqual(umsgpack.packb(obj), data)
 
     def test_pack_composite(self):
         for (name, obj, data) in composite_test_vectors:
-            print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
+            obj_repr = repr(obj)
+            print("\tTesting %s: object %s" % (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
             self.assertEqual(umsgpack.packb(obj), data)
 
     def test_pack_exceptions(self):
         for (name, obj, exception) in pack_exception_test_vectors:
-            print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
+            obj_repr = repr(obj)
+            print("\tTesting %s: object %s" % (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
             try:
                 umsgpack.packb(obj)
             except Exception as e:
@@ -246,7 +252,8 @@ class TestUmsgpack(unittest.TestCase):
 
     def test_unpack_single(self):
         for (name, obj, data) in single_test_vectors:
-            print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
+            obj_repr = repr(obj)
+            print("\tTesting %s: object %s" % (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
             unpacked = umsgpack.unpackb(data)
 
             # In Python2, we have both int and long integer types, but which
@@ -265,7 +272,8 @@ class TestUmsgpack(unittest.TestCase):
 
     def test_unpack_composite(self):
         for (name, obj, data) in composite_test_vectors:
-            print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
+            obj_repr = repr(obj)
+            print("\tTesting %s: object %s" % (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
             self.assertEqual(umsgpack.unpackb(data), obj)
 
     def test_unpack_exceptions(self):
@@ -280,7 +288,8 @@ class TestUmsgpack(unittest.TestCase):
         umsgpack.compatibility = True
 
         for (name, obj, data) in compatibility_test_vectors:
-            print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
+            obj_repr = repr(obj)
+            print("\tTesting %s: object %s" % (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
             self.assertEqual(umsgpack.packb(obj), data)
 
         umsgpack.compatibility = False
@@ -289,7 +298,8 @@ class TestUmsgpack(unittest.TestCase):
         umsgpack.compatibility = True
 
         for (name, obj, data) in compatibility_test_vectors:
-            print("\tTesting %s: object %s" % (name, str(obj) if len(str(obj)) < 24 else str(obj)[0:24] + "..."))
+            obj_repr = repr(obj)
+            print("\tTesting %s: object %s" % (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
             unpacked = umsgpack.unpackb(data)
 
             # Encoded raw should always unpack to bytes in compatibility mode,

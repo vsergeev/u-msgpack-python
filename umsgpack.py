@@ -1,4 +1,5 @@
 # u-msgpack-python v1.5 - vsergeev at gmail
+# https://github.com/vsergeev/u-msgpack-python
 #
 # u-msgpack-python is a lightweight MessagePack serializer and deserializer
 # module, compatible with both Python 2 and 3, as well CPython and PyPy
@@ -6,6 +7,28 @@
 # latest MessagePack specification.com/msgpack/msgpack/blob/master/spec.md). In
 # particular, it supports the new binary, UTF-8 string, and application ext
 # types.
+#
+# MIT License
+#
+# Copyright (c) 2013 Ivan A. Sergeev
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 #
 
 import struct
@@ -37,18 +60,17 @@ class Ext:
         return not self.__eq__(other)
 
     def __str__(self):
-        s = "Ext Object\n"
-        s += "   Type: %02x\n" % self.type
-        s += "   Data: "
-        for i in range(len(self.data)):
+        s = "Ext Object (Type: 0x%02x, Data: " % self.type
+        for i in range(min(len(self.data), 8)):
+            if i > 0:
+                s += " "
             if isinstance(self.data[i], int):
-                s += "%02x " % (self.data[i])
+                s += "%02x" % (self.data[i])
             else:
-                s += "%02x " % ord(self.data[i])
-            if i == 16-1:
-                break
-        if len(self.data) > 16:
-            s += "..."
+                s += "%02x" % ord(self.data[i])
+        if len(self.data) > 8:
+            s += " ..."
+        s += ")"
         return s
 
 ################################################################################
@@ -126,14 +148,15 @@ def _pack_float(x):
         return b"\xca" + struct.pack(">f", x)
 
 def _pack_string(x):
+    x = x.encode('utf-8')
     if len(x) <= 31:
-        return struct.pack("B", 0xa0 | len(x)) + x.encode('utf-8')
+        return struct.pack("B", 0xa0 | len(x)) + x
     elif len(x) <= 2**8-1:
-        return b"\xd9" + struct.pack("B", len(x)) + x.encode('utf-8')
+        return b"\xd9" + struct.pack("B", len(x)) + x
     elif len(x) <= 2**16-1:
-        return b"\xda" + struct.pack(">H", len(x)) + x.encode('utf-8')
+        return b"\xda" + struct.pack(">H", len(x)) + x
     elif len(x) <= 2**32-1:
-        return b"\xdb" + struct.pack(">I", len(x)) + x.encode('utf-8')
+        return b"\xdb" + struct.pack(">I", len(x)) + x
     else:
         raise UnsupportedTypeException("huge string")
 
