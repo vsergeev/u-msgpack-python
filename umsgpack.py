@@ -178,6 +178,15 @@ When compatibility mode is enabled, u-msgpack-python will serialize both
 unicode strings and bytes into the old "raw" msgpack type, and deserialize the
 "raw" msgpack type into bytes. This provides backwards compatibility with the
 old MessagePack specification.
+
+Example:
+>>> umsgpack.compatibility = True
+>>>
+>>> umsgpack.packb([u"some string", b"some bytes"])
+b'\x92\xabsome string\xaasome bytes'
+>>> umsgpack.unpackb(_)
+[b'some string', b'some bytes']
+>>>
 """
 
 ################################################################################

@@ -1,8 +1,8 @@
 # u-msgpack-python v1.5
 
-u-msgpack-python is a lightweight [MessagePack](http://msgpack.org/) serializer and deserializer module, compatible with both Python 2 and 3, as well CPython and PyPy implementations of Python. u-msgpack-python is fully compliant with the latest [MessagePack specification](https://github.com/msgpack/msgpack/blob/master/spec.md).
+u-msgpack-python is a lightweight [MessagePack](http://msgpack.org/) serializer and deserializer module written in pure Python, compatible with both Python 2 and 3, as well CPython and PyPy implementations of Python. u-msgpack-python is fully compliant with the latest [MessagePack specification](https://github.com/msgpack/msgpack/blob/master/spec.md).
 
-u-msgpack-python is written in pure Python and is currently distributed on PyPI: https://pypi.python.org/pypi/u-msgpack-python and as a single file: [umsgpack.py](https://raw.github.com/vsergeev/u-msgpack-python/master/umsgpack.py)
+u-msgpack-python is currently distributed on PyPI: https://pypi.python.org/pypi/u-msgpack-python and as a single file: [umsgpack.py](https://raw.github.com/vsergeev/u-msgpack-python/master/umsgpack.py)
 
 ## Installation
 
@@ -68,13 +68,22 @@ An example of encoding and decoding an application ext type:
 b'\x82\xadspecial stuff\xc7\x03\x05\x01\x02\x03\xa7awesome\xc3'
 >>> bar = umsgpack.unpackb(_)
 >>> print(bar["special stuff"])
-Ext Object
-   Type: 05
-   Data: 01 02 03 
+Ext Object (Type: 0x05, Data: 01 02 03)
 >>> bar["special stuff"].type
 5
 >>> bar["special stuff"].data
 b'\x01\x02\x03'
+>>> 
+```
+
+Python standard library style `loads` and `dumps` functions are also available as aliases:
+
+``` python
+>>> import umsgpack
+>>> umsgpack.dumps({u"compact": True, u"schema": 0})
+'\x82\xa7compact\xc3\xa6schema\x00'
+>>> umsgpack.loads(_)
+{u'compact': True, u'schema': 0}
 >>> 
 ```
 

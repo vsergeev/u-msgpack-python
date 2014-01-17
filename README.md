@@ -1,8 +1,8 @@
 # u-msgpack-python v1.5
 
-u-msgpack-python is a lightweight [MessagePack](http://msgpack.org/) serializer and deserializer module, compatible with both Python 2 and 3, as well CPython and PyPy implementations of Python. u-msgpack-python is fully compliant with the latest [MessagePack specification](https://github.com/msgpack/msgpack/blob/master/spec.md). In particular, it supports the new binary, UTF-8 string, and application ext types.
+u-msgpack-python is a lightweight [MessagePack](http://msgpack.org/) serializer and deserializer module written in pure Python, compatible with both Python 2 and 3, as well CPython and PyPy implementations of Python. u-msgpack-python is fully compliant with the latest [MessagePack specification](https://github.com/msgpack/msgpack/blob/master/spec.md). In particular, it supports the new binary, UTF-8 string, and application ext types.
 
-u-msgpack-python is written in pure Python and is currently distributed on PyPI: https://pypi.python.org/pypi/u-msgpack-python and as a single file: [umsgpack.py](https://raw.github.com/vsergeev/u-msgpack-python/master/umsgpack.py)
+u-msgpack-python is currently distributed on PyPI: https://pypi.python.org/pypi/u-msgpack-python and as a single file: [umsgpack.py](https://raw.github.com/vsergeev/u-msgpack-python/master/umsgpack.py)
 
 ## Installation
 
@@ -63,19 +63,28 @@ b'\x97\x01\xc3\xc2\xce\xff\xff\xff\xff\x82\xa3foo\xc4\x03\x80\x01
 
 An example of encoding and decoding an application ext type:
 ``` python
->>> # Create an Ext object with type 0x05 and data b"\x01\x02\x03"
-... foo = umsgpack.Ext(0x05, b"\x01\x02\x03")
+# Create an Ext object with type 0x05 and data b"\x01\x02\x03"
+>>> foo = umsgpack.Ext(0x05, b"\x01\x02\x03")
 >>> umsgpack.packb({u"special stuff": foo, u"awesome": True})
 b'\x82\xadspecial stuff\xc7\x03\x05\x01\x02\x03\xa7awesome\xc3'
 >>> bar = umsgpack.unpackb(_)
 >>> print(bar["special stuff"])
-Ext Object
-   Type: 05
-   Data: 01 02 03 
+Ext Object (Type: 0x05, Data: 01 02 03)
 >>> bar["special stuff"].type
 5
 >>> bar["special stuff"].data
 b'\x01\x02\x03'
+>>> 
+```
+
+Python standard library style `loads` and `dumps` functions are also available as aliases:
+
+``` python
+>>> import umsgpack
+>>> umsgpack.dumps({u"compact": True, u"schema": 0})
+'\x82\xa7compact\xc3\xa6schema\x00'
+>>> umsgpack.loads(_)
+{u'compact': True, u'schema': 0}
 >>> 
 ```
 
@@ -122,78 +131,78 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 * `TypeError`: Packed data is not type `str` (Python 2), or not type `bytes` (Python 3).
 
     ``` python
-    >>> # Attempt to unpack non-str type data in Python 2
-    ... umsgpack.unpackb(u"no good")
+    # Attempt to unpack non-str type data in Python 2
+    >>> umsgpack.unpackb(u"no good")
     ...
     TypeError: expected packed data as type 'str'
     >>> 
 
-    >>> # Attempt to unpack non-bytes type data in Python 3
-    ... umsgpack.unpackb("no good")
+    # Attempt to unpack non-bytes type data in Python 3
+    >>> umsgpack.unpackb("no good")
     ...
     TypeError: expected packed data as type 'bytes'
     >>> 
     ```
 
-* `InsufficientDataException`: Insufficient data to unpack encoded object.
+* `InsufficientDataException`: Insufficient data to unpack the encoded object.
 
     ``` python
-    >>> # Attempt to unpack a cut-off encoded 32-bit unsigned int
-    ... umsgpack.unpackb(b"\xce\xff\xff\xff")
+    # Attempt to unpack a cut-off encoded 32-bit unsigned int
+    >>> umsgpack.unpackb(b"\xce\xff\xff\xff")
     ...
     umsgpack.InsufficientDataException
     >>> 
 
-    >>> # Attempt to unpack an array of length 2 missing the second item
-    ... umsgpack.unpackb(b"\x92\xc2")
+    # Attempt to unpack an array of length 2 missing the second item
+    >>> umsgpack.unpackb(b"\x92\xc2")
     ...
     umsgpack.InsufficientDataException
     >>> 
 
     ```
-* `InvalidStringException`: Invalid string (not UTF-8) encountered.
+* `InvalidStringException`: Invalid UTF-8 string encountered during unpacking.
 
     String bytes are strictly decoded with UTF-8. This exception is thrown if UTF-8 decoding of string bytes fails.
 
     ``` python
-    >>> # Attempt to unpack the string "\x80\x81"
-    ... umsgpack.unpackb(b"\xa2\x80\x81")
+    # Attempt to unpack the string "\x80\x81"
+    >>> umsgpack.unpackb(b"\xa2\x80\x81")
     ...
     umsgpack.InvalidStringException: unpacked string is not utf-8
     >>> 
     ```
 
-* `ReservedCodeException`: msgpack reserved code encountered.
+* `ReservedCodeException`: Reserved code encountered during unpacking.
 
     ``` python
-    >>> # Attempt to unpack reserved code 0xc1
-    ... umsgpack.unpackb(b"\xc1")
+    # Attempt to unpack reserved code 0xc1
+    >>> umsgpack.unpackb(b"\xc1")
     ...
     umsgpack.ReservedCodeException: reserved code encountered: 0xc1
     >>> 
     ```
 
-* `KeyNotPrimitiveException`: Unhashable key encountered during map unpacking.
+* `UnhashableKeyException`: Unhashable key encountered during map unpacking. The serialized map cannot be deserialized into a Python dictionary.
 
     Python dictionaries only support keys that are instances of `collections.Hashable`, so while the map `{ { u'abc': True } : 5 }` has a msgpack encoding, it cannot be unpacked into a valid Python dictionary.
 
     ``` python
-    >>> # Attempt to unpack { {} : False }
-    ... umsgpack.unpackb(b"\x82\x80\xc2")
+    # Attempt to unpack { {} : False }
+    >>> umsgpack.unpackb(b"\x82\x80\xc2")
     ...
-    umsgpack.KeyNotPrimitiveException: encountered non-primitive key type: <type 'dict'>
+    umsgpack.UnhashableKeyException: encountered unhashable key type: <type 'dict'>
     >>> 
     ```
 
-* `KeyDuplicateException`: Duplicate key encountered during map unpacking.
+* `DuplicateKeyException`: Duplicate key encountered during map unpacking.
 
     Python dictionaries do not support duplicate keys, but msgpack maps may be encoded with duplicate keys.
 
     ``` python
-    >>> # Attempt to unpack { 1: True, 1: False }
-    ... umsgpack.unpackb(b"\x82\x01\xc3\x01\xc2")
+    # Attempt to unpack { 1: True, 1: False }
+    >>> umsgpack.unpackb(b"\x82\x01\xc3\x01\xc2")
     ...
-    umsgpack.KeyDuplicateException: encountered duplicate key: 1, <type 'int'>
+    umsgpack.DuplicateKeyException: encountered duplicate key: 1, <type 'int'>
     >>> 
     ```
 
