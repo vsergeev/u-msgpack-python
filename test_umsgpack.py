@@ -78,6 +78,7 @@ single_test_vectors = [
     [ "32-bit string", u"b" * 65536, b"\xdb\x00\x01\x00\x00" + b"b" * 65536 ],
     # Wide character String
     [ "wide char string", u"Allagbé", b"\xa8Allagb\xc3\xa9" ],
+    [ "wide char string", u"По оживлённым берегам", b"\xd9\x28\xd0\x9f\xd0\xbe\x20\xd0\xbe\xd0\xb6\xd0\xb8\xd0\xb2\xd0\xbb\xd1\x91\xd0\xbd\xd0\xbd\xd1\x8b\xd0\xbc\x20\xd0\xb1\xd0\xb5\xd1\x80\xd0\xb5\xd0\xb3\xd0\xb0\xd0\xbc" ],
     # 8-bit Binary
     [ "8-bit binary", b"\x80" * 1, b"\xc4\x01" + b"\x80" * 1 ],
     [ "8-bit binary", b"\x80" * 32, b"\xc4\x20" + b"\x80" * 32 ],
