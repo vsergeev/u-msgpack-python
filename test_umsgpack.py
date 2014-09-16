@@ -254,6 +254,8 @@ class TestUmsgpack(unittest.TestCase):
                 umsgpack.packb(obj)
             except Exception as e:
                 self.assertTrue(isinstance(e, exception))
+                continue
+            self.assertTrue(False)
 
     def test_unpack_single(self):
         for (name, obj, data) in single_test_vectors:
@@ -288,6 +290,8 @@ class TestUmsgpack(unittest.TestCase):
                 umsgpack.unpackb(data)
             except Exception as e:
                 self.assertTrue(isinstance(e, exception))
+                continue
+            self.assertTrue(False)
 
     def test_pack_compatibility(self):
         umsgpack.compatibility = True
