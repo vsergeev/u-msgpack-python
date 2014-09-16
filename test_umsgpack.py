@@ -116,7 +116,7 @@ composite_test_vectors = [
     [ "16-bit array", [ 0x05 ]*16, b"\xdc\x00\x10" + b"\x05"*16 ],
     [ "16-bit array", [ 0x05 ]*65535, b"\xdc\xff\xff" + b"\x05"*65535 ],
     # 32-bit Array
-    [ "16-bit array", [ 0x05 ]*65536, b"\xdd\x00\x01\x00\x00" + b"\x05"*65536 ],
+    [ "32-bit array", [ 0x05 ]*65536, b"\xdd\x00\x01\x00\x00" + b"\x05"*65536 ],
     # Fix Map
     [ "fix map", { 1: True, 2: u"abc", 3: b"\x80" }, b"\x83\x01\xc3\x02\xa3\x61\x62\x63\x03\xc4\x01\x80" ],
     [ "fix map", { u"abc" : 5 }, b"\x81\xa3\x61\x62\x63\x05" ],
