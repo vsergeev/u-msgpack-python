@@ -128,7 +128,11 @@ composite_test_vectors = [
     # Complex Array
     [ "complex array", [ True, 0x01, umsgpack.Ext(0x03, b"foo"), 0xff, { 1: False, 2: u"abc" }, b"\x80", [ 1, 2, 3], u"abc" ], b"\x98\xc3\x01\xc7\x03\x03\x66\x6f\x6f\xcc\xff\x82\x01\xc2\x02\xa3\x61\x62\x63\xc4\x01\x80\x93\x01\x02\x03\xa3\x61\x62\x63" ],
     # Complex Map
-    [ "complex map", { 1 : [{1: 2, 3: 4}, {}], 2: 1, 3: [False, u"def"], 4: {0x100000000: u"a", 0xffffffff: u"b"}}, b"\x84\x01\x92\x82\x01\x02\x03\x04\x80\x02\x01\x03\x92\xc2\xa3\x64\x65\x66\x04\x82\xcf\x00\x00\x00\x01\x00\x00\x00\x00\xa1\x61\xce\xff\xff\xff\xff\xa1\x62" ]
+    [ "complex map", { 1 : [{1: 2, 3: 4}, {}], 2: 1, 3: [False, u"def"], 4: {0x100000000: u"a", 0xffffffff: u"b"}}, b"\x84\x01\x92\x82\x01\x02\x03\x04\x80\x02\x01\x03\x92\xc2\xa3\x64\x65\x66\x04\x82\xcf\x00\x00\x00\x01\x00\x00\x00\x00\xa1\x61\xce\xff\xff\xff\xff\xa1\x62" ],
+    # Map with Tuple Keys
+    [ "map with tuple keys", {(u"foo", False, 3) : True, (3e6, -5): u"def"}, b"\x82\x92\xcb\x41\x46\xe3\x60\x00\x00\x00\x00\xfb\xa3\x64\x65\x66\x93\xa3\x66\x6f\x6f\xc2\x03\xc3" ],
+    # Map with Complex Tuple Keys
+    [ "map with complex tuple keys", {(u"foo", (1,2,3), 3) : -5}, b"\x81\x93\xa3\x66\x6f\x6f\x93\x01\x02\x03\x03\xfb" ]
 ]
 
 pack_exception_test_vectors = [
@@ -176,10 +180,10 @@ unpack_exception_test_vectors = [
     [ "insufficient data ext 8-bit", b"\xc7\x05\x05\x01\x02\x03", umsgpack.InsufficientDataException ],
     [ "insufficient data ext 16-bit", b"\xc8\x01\x00\x05\x01\x02\x03", umsgpack.InsufficientDataException ],
     [ "insufficient data ext 32-bit", b"\xc9\x00\x01\x00\x00\x05\x01\x02\x03", umsgpack.InsufficientDataException ],
-    # Unhashable key { 1 : False, [1,2,3] : True }
-    [ "unhashable key", b"\x82\x01\xc2\x93\x01\x02\x03\xc3", umsgpack.UnhashableKeyException ],
     # Unhashable key { 1 : True, { 1 : 1 } : False }
     [ "unhashable key", b"\x82\x01\xc3\x81\x01\x01\xc2", umsgpack.UnhashableKeyException ],
+    # Unhashable key { [ 1, 2, {} ] : True }
+    [ "unhashable key", b"\x81\x93\x01\x02\x80\xc3", umsgpack.UnhashableKeyException ],
     # Key duplicate { 1 : True, 1 : False }
     [ "duplicate key", b"\x82\x01\xc3\x01\xc2", umsgpack.DuplicateKeyException ],
     # Reserved code (0xc1)

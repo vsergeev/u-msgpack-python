@@ -1,4 +1,4 @@
-# u-msgpack-python v1.6 - vsergeev at gmail
+# u-msgpack-python v1.8 - vsergeev at gmail
 # https://github.com/vsergeev/u-msgpack-python
 #
 # u-msgpack-python is a lightweight MessagePack serializer and deserializer
@@ -31,7 +31,7 @@
 # THE SOFTWARE.
 #
 """
-u-msgpack-python v1.6 - vsergeev at gmail
+u-msgpack-python v1.8 - vsergeev at gmail
 https://github.com/vsergeev/u-msgpack-python
 
 u-msgpack-python is a lightweight MessagePack serializer and deserializer
@@ -44,7 +44,7 @@ types.
 License: MIT
 """
 
-version = (1,6)
+version = (1,8)
 "Module version tuple"
 
 import struct
@@ -531,6 +531,11 @@ def _unpack_array(code, read_fn):
 
     return [_unpackb(read_fn) for i in range(length)]
 
+def _deep_list_to_tuple(x):
+    if isinstance(x, list):
+        return tuple([_deep_list_to_tuple(e) for e in x])
+    return x
+
 def _unpack_map(code, read_fn):
     if (ord(code) & 0xf0) == 0x80:
         length = (ord(code) & ~0xf0)
@@ -546,15 +551,21 @@ def _unpack_map(code, read_fn):
         # Unpack key
         k = _unpackb(read_fn)
 
-        if not isinstance(k, collections.Hashable):
-            raise UnhashableKeyException("encountered unhashable key type: %s" % str(type(k)))
+        if isinstance(k, list):
+            # Attempt to convert list into a hashable tuple
+            k = _deep_list_to_tuple(k)
+        elif not isinstance(k, collections.Hashable):
+            raise UnhashableKeyException("encountered unhashable key: %s, %s" % (str(k), str(type(k))))
         elif k in d:
             raise DuplicateKeyException("encountered duplicate key: %s, %s" % (str(k), str(type(k))))
 
         # Unpack value
         v = _unpackb(read_fn)
 
-        d[k] = v
+        try:
+            d[k] = v
+        except TypeError:
+            raise UnhashableKeyException("encountered unhashable key: %s" % str(k))
     return d
 
 ########################################
