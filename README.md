@@ -1,4 +1,4 @@
-# u-msgpack-python v1.6
+# u-msgpack-python v1.8
 
 u-msgpack-python is a lightweight [MessagePack](http://msgpack.org/) serializer and deserializer module written in pure Python, compatible with both Python 2 and 3, as well CPython and PyPy implementations of Python. u-msgpack-python is fully compliant with the latest [MessagePack specification](https://github.com/msgpack/msgpack/blob/master/spec.md). In particular, it supports the new binary, UTF-8 string, and application ext types.
 
@@ -35,28 +35,26 @@ Basic Example:
 
 A more complicated example:
 ``` python
->>> umsgpack.packb( \
-    [1, True, False, 0xffffffff, {u"foo": b"\x80\x01\x02", \
-     u"bar": [1,2,3, {u"a": [1,2,3,{}]}]}, -1, 2.12345] )
+>>> umsgpack.packb( [1, True, False, 0xffffffff, {u"foo": b"\x80\x01\x02",
+                     u"bar": [1,2,3, {u"a": [1,2,3,{}]}]}, -1, 2.12345] )
 '\x97\x01\xc3\xc2\xce\xff\xff\xff\xff\x82\xa3foo\xc4\x03\x80\x01
 \x02\xa3bar\x94\x01\x02\x03\x81\xa1a\x94\x01\x02\x03\x80\xff\xcb
 @\x00\xfc\xd3Z\x85\x87\x94'
 >>> umsgpack.unpackb(_)
-[1, True, False, 4294967295, {u'foo': '\x80\x01\x02', \
+[1, True, False, 4294967295, {u'foo': '\x80\x01\x02',
  u'bar': [1, 2, 3, {u'a': [1, 2, 3, {}]}]}, -1, 2.12345]
 >>> 
 ```
 
 The more complicated example in Python 3:
 ``` python
->>> umsgpack.packb( \
-    [1, True, False, 0xffffffff, {u"foo": b"\x80\x01\x02", \
-     u"bar": [1,2,3, {u"a": [1,2,3,{}]}]}, -1, 2.12345] )
+>>> umsgpack.packb( [1, True, False, 0xffffffff, {u"foo": b"\x80\x01\x02",
+                     u"bar": [1,2,3, {u"a": [1,2,3,{}]}]}, -1, 2.12345] )
 b'\x97\x01\xc3\xc2\xce\xff\xff\xff\xff\x82\xa3foo\xc4\x03\x80\x01
 \x02\xa3bar\x94\x01\x02\x03\x81\xa1a\x94\x01\x02\x03\x80\xff\xcb@
 \x00\xfc\xd3Z\x85\x87\x94'
 >>> umsgpack.unpackb(_)
-[1, True, False, 4294967295, {'foo': b'\x80\x01\x02', \
+[1, True, False, 4294967295, {'foo': b'\x80\x01\x02',
  'bar': [1, 2, 3, {'a': [1, 2, 3, {}]}]}, -1, 2.12345]
 >>> 
 ```
@@ -182,7 +180,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
     >>> 
     ```
 
-* `UnhashableKeyException`: Unhashable key encountered during map unpacking. The serialized map cannot be deserialized into a Python dictionary.
+* `UnhashableKeyException`: Unhashable key encountered during map unpacking. The packed map cannot be unpacked into a Python dictionary.
 
     Python dictionaries only support keys that are instances of `collections.Hashable`, so while the map `{ { u'abc': True } : 5 }` has a msgpack encoding, it cannot be unpacked into a valid Python dictionary.
 
@@ -190,7 +188,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
     # Attempt to unpack { {} : False }
     >>> umsgpack.unpackb(b"\x82\x80\xc2")
     ...
-    umsgpack.UnhashableKeyException: encountered unhashable key type: <type 'dict'>
+    umsgpack.UnhashableKeyException: encountered unhashable key type: {}, <type 'dict'>
     >>> 
     ```
 
@@ -214,8 +212,9 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 * Python 3
   * `str` type objects are packed into, and unpacked from, the msgpack `string` format
   * `bytes` type objects are packed into, and unpacked from, the msgpack `binary` format
-* The msgpack string format is strictly decoded with UTF-8. An exception is thrown if the string bytes cannot be decoded into a valid UTF-8 string.
-* The msgpack array format is unpacked into a Python list, not tuple
+* The msgpack string format is strictly decoded with UTF-8 -- an exception is thrown if the string bytes cannot be decoded into a valid UTF-8 string
+* The msgpack array format is unpacked into a Python list, unless it is the key of a map, in which case it is unpacked into a Python tuple
+* Python tuples and lists are both packed into the msgpack array format
 * Python float types are packed into the msgpack float32 or float64 format depending on the system's `sys.float_info`
 
 ## Testing
@@ -226,6 +225,7 @@ u-msgpack-python's included unit tests may be run with `test_umsgpack.py`, under
 $ python2 test_umsgpack.py
 $ python3 test_umsgpack.py
 $ pypy test_umsgpack.py
+$ pypy3 test_umsgpack.py
 ```
 
 ## License
