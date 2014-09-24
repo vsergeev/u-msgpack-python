@@ -52,12 +52,14 @@ import collections
 import sys
 
 ################################################################################
+### Ext Class
+################################################################################
 
-# Extension type for application-specific types and data
+# Extension type for application-defined types and data
 class Ext:
     """
     The Ext class facilitates creating a serializable extension object to store
-    an application-specific type and data byte array.
+    an application-defined type and data byte array.
     """
 
     def __init__(self, type, data):
@@ -65,8 +67,8 @@ class Ext:
         Construct a new Ext object.
 
         Args:
-            type: application-specific type integer from 0 to 127
-            data: application-specific data byte array
+            type: application-defined type integer from 0 to 127
+            data: application-defined data byte array
 
         Raises:
             TypeError:
@@ -124,6 +126,8 @@ class Ext:
         return s
 
 ################################################################################
+### Exceptions
+################################################################################
 
 # Base Exception classes
 class PackException(Exception):
@@ -163,6 +167,8 @@ KeyNotPrimitiveException = UnhashableKeyException
 KeyDuplicateException = DuplicateKeyException
 
 ################################################################################
+### Exported Functions and Globals
+################################################################################
 
 # Exported functions and variables set in __init()
 packb = None
@@ -189,6 +195,8 @@ b'\x92\xabsome string\xaasome bytes'
 >>>
 """
 
+################################################################################
+### Packing
 ################################################################################
 
 # You may notice struct.pack("B", x) instead of the simpler chr(x) in the code
@@ -414,6 +422,8 @@ def _packb3(x):
     else:
         raise UnsupportedTypeException("unsupported type: %s" % str(type(x)))
 
+################################################################################
+### Unpacking
 ################################################################################
 
 def _unpack_integer(code, read_fn):
@@ -656,6 +666,8 @@ def _unpackb3(s):
     read_fn = _byte_reader(s)
     return _unpackb(read_fn)
 
+################################################################################
+### Module Initialization
 ################################################################################
 
 def __init():
