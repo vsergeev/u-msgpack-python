@@ -204,131 +204,184 @@ b'\x92\xabsome string\xaasome bytes'
 # has a str return type instead of bytes in Python 3, and struct.pack(...) has
 # the right return type in both versions.
 
-def _pack_integer(x):
+def _pack_integer(x, write_fn):
     if x < 0:
         if x >= -32:
-            return struct.pack("b", x)
+            write_fn(struct.pack("b", x))
         elif x >= -2**(8-1):
-            return b"\xd0" + struct.pack("b", x)
+            write_fn(b"\xd0" + struct.pack("b", x))
         elif x >= -2**(16-1):
-            return b"\xd1" + struct.pack(">h", x)
+            write_fn(b"\xd1" + struct.pack(">h", x))
         elif x >= -2**(32-1):
-            return b"\xd2" + struct.pack(">i", x)
+            write_fn(b"\xd2" + struct.pack(">i", x))
         elif x >= -2**(64-1):
-            return b"\xd3" + struct.pack(">q", x)
+            write_fn(b"\xd3" + struct.pack(">q", x))
         else:
             raise UnsupportedTypeException("huge signed int")
     else:
         if x <= 127:
-            return struct.pack("B", x)
+            write_fn(struct.pack("B", x))
         elif x <= 2**8-1:
-            return b"\xcc" + struct.pack("B", x)
+            write_fn(b"\xcc" + struct.pack("B", x))
         elif x <= 2**16-1:
-            return b"\xcd" + struct.pack(">H", x)
+            write_fn(b"\xcd" + struct.pack(">H", x))
         elif x <= 2**32-1:
-            return b"\xce" + struct.pack(">I", x)
+            write_fn(b"\xce" + struct.pack(">I", x))
         elif x <= 2**64-1:
-            return b"\xcf" + struct.pack(">Q", x)
+            write_fn(b"\xcf" + struct.pack(">Q", x))
         else:
             raise UnsupportedTypeException("huge unsigned int")
 
-def _pack_nil(x):
-    return b"\xc0"
+def _pack_nil(x, write_fn):
+    write_fn(b"\xc0")
 
-def _pack_boolean(x):
-    return b"\xc3" if x else b"\xc2"
+def _pack_boolean(x, write_fn):
+    write_fn(b"\xc3" if x else b"\xc2")
 
-def _pack_float(x):
+def _pack_float(x, write_fn):
     if _float_size == 64:
-        return b"\xcb" + struct.pack(">d", x)
+        write_fn(b"\xcb" + struct.pack(">d", x))
     else:
-        return b"\xca" + struct.pack(">f", x)
+        write_fn(b"\xca" + struct.pack(">f", x))
 
-def _pack_string(x):
+def _pack_string(x, write_fn):
     x = x.encode('utf-8')
     if len(x) <= 31:
-        return struct.pack("B", 0xa0 | len(x)) + x
+        write_fn(struct.pack("B", 0xa0 | len(x)) + x)
     elif len(x) <= 2**8-1:
-        return b"\xd9" + struct.pack("B", len(x)) + x
+        write_fn(b"\xd9" + struct.pack("B", len(x)) + x)
     elif len(x) <= 2**16-1:
-        return b"\xda" + struct.pack(">H", len(x)) + x
+        write_fn(b"\xda" + struct.pack(">H", len(x)) + x)
     elif len(x) <= 2**32-1:
-        return b"\xdb" + struct.pack(">I", len(x)) + x
+        write_fn(b"\xdb" + struct.pack(">I", len(x)) + x)
     else:
         raise UnsupportedTypeException("huge string")
 
-def _pack_binary(x):
+def _pack_binary(x, write_fn):
     if len(x) <= 2**8-1:
-        return b"\xc4" + struct.pack("B", len(x)) + x
+        write_fn(b"\xc4" + struct.pack("B", len(x)) + x)
     elif len(x) <= 2**16-1:
-        return b"\xc5" + struct.pack(">H", len(x)) + x
+        write_fn(b"\xc5" + struct.pack(">H", len(x)) + x)
     elif len(x) <= 2**32-1:
-        return b"\xc6" + struct.pack(">I", len(x)) + x
+        write_fn(b"\xc6" + struct.pack(">I", len(x)) + x)
     else:
         raise UnsupportedTypeException("huge binary string")
 
-def _pack_oldspec_raw(x):
+def _pack_oldspec_raw(x, write_fn):
     if len(x) <= 31:
-        return struct.pack("B", 0xa0 | len(x)) + x
+        write_fn(struct.pack("B", 0xa0 | len(x)) + x)
     elif len(x) <= 2**16-1:
-        return b"\xda" + struct.pack(">H", len(x)) + x
+        write_fn(b"\xda" + struct.pack(">H", len(x)) + x)
     elif len(x) <= 2**32-1:
-        return b"\xdb" + struct.pack(">I", len(x)) + x
+        write_fn(b"\xdb" + struct.pack(">I", len(x)) + x)
     else:
         raise UnsupportedTypeException("huge raw string")
 
-def _pack_ext(x):
+def _pack_ext(x, write_fn):
     if len(x.data) == 1:
-        return b"\xd4" + struct.pack("B", x.type & 0xff) + x.data
+        write_fn(b"\xd4" + struct.pack("B", x.type & 0xff) + x.data)
     elif len(x.data) == 2:
-        return b"\xd5" + struct.pack("B", x.type & 0xff) + x.data
+        write_fn(b"\xd5" + struct.pack("B", x.type & 0xff) + x.data)
     elif len(x.data) == 4:
-        return b"\xd6" + struct.pack("B", x.type & 0xff) + x.data
+        write_fn(b"\xd6" + struct.pack("B", x.type & 0xff) + x.data)
     elif len(x.data) == 8:
-        return b"\xd7" + struct.pack("B", x.type & 0xff) + x.data
+        write_fn(b"\xd7" + struct.pack("B", x.type & 0xff) + x.data)
     elif len(x.data) == 16:
-        return b"\xd8" + struct.pack("B", x.type & 0xff) + x.data
+        write_fn(b"\xd8" + struct.pack("B", x.type & 0xff) + x.data)
     elif len(x.data) <= 2**8-1:
-        return b"\xc7" + struct.pack("BB", len(x.data), x.type & 0xff) + x.data
+        write_fn(b"\xc7" + struct.pack("BB", len(x.data), x.type & 0xff) + x.data)
     elif len(x.data) <= 2**16-1:
-        return b"\xc8" + struct.pack(">HB", len(x.data), x.type & 0xff) + x.data
+        write_fn(b"\xc8" + struct.pack(">HB", len(x.data), x.type & 0xff) + x.data)
     elif len(x.data) <= 2**32-1:
-        return b"\xc9" + struct.pack(">IB", len(x.data), x.type & 0xff) + x.data
+        write_fn(b"\xc9" + struct.pack(">IB", len(x.data), x.type & 0xff) + x.data)
     else:
         raise UnsupportedTypeException("huge ext data")
 
-def _pack_array(x):
+def _pack_array(x, write_fn):
     if len(x) <= 15:
-        s = struct.pack("B", 0x90 | len(x))
+        write_fn(struct.pack("B", 0x90 | len(x)))
     elif len(x) <= 2**16-1:
-        s = b"\xdc" + struct.pack(">H", len(x))
+        write_fn(b"\xdc" + struct.pack(">H", len(x)))
     elif len(x) <= 2**32-1:
-        s = b"\xdd" + struct.pack(">I", len(x))
+        write_fn(b"\xdd" + struct.pack(">I", len(x)))
     else:
         raise UnsupportedTypeException("huge array")
 
     for e in x:
-        s += packb(e)
+        _pack(e, write_fn)
 
-    return s
-
-def _pack_map(x):
+def _pack_map(x, write_fn):
     if len(x) <= 15:
-        s = struct.pack("B", 0x80 | len(x))
+        write_fn(struct.pack("B", 0x80 | len(x)))
     elif len(x) <= 2**16-1:
-        s = b"\xde" + struct.pack(">H", len(x))
+        write_fn(b"\xde" + struct.pack(">H", len(x)))
     elif len(x) <= 2**32-1:
-        s = b"\xdf" + struct.pack(">I", len(x))
+        write_fn(b"\xdf" + struct.pack(">I", len(x)))
     else:
         raise UnsupportedTypeException("huge array")
 
     for k,v in x.items():
-        s += packb(k)
-        s += packb(v)
-
-    return s
+        _pack(k, write_fn)
+        _pack(v, write_fn)
 
 # Pack for Python 2, with 'unicode' type, 'str' type, and 'long' type
+def _pack2(x, write_fn):
+    global compatibility
+
+    if x is None:
+        _pack_nil(x, write_fn)
+    elif isinstance(x, bool):
+        _pack_boolean(x, write_fn)
+    elif isinstance(x, int) or isinstance(x, long):
+        _pack_integer(x, write_fn)
+    elif isinstance(x, float):
+        _pack_float(x, write_fn)
+    elif compatibility and isinstance(x, unicode):
+        _pack_oldspec_raw(bytes(x), write_fn)
+    elif compatibility and isinstance(x, bytes):
+        _pack_oldspec_raw(x, write_fn)
+    elif isinstance(x, unicode):
+        _pack_string(x, write_fn)
+    elif isinstance(x, str):
+        _pack_binary(x, write_fn)
+    elif isinstance(x, list) or isinstance(x, tuple):
+        _pack_array(x, write_fn)
+    elif isinstance(x, dict):
+        _pack_map(x, write_fn)
+    elif isinstance(x, Ext):
+        _pack_ext(x, write_fn)
+    else:
+        raise UnsupportedTypeException("unsupported type: %s" % str(type(x)))
+
+# Pack for Python 3, with unicode 'str' type, 'bytes' type, and no 'long' type
+def _pack3(x, write_fn):
+    global compatibility
+
+    if x is None:
+        _pack_nil(x, write_fn)
+    elif isinstance(x, bool):
+        _pack_boolean(x, write_fn)
+    elif isinstance(x, int):
+        _pack_integer(x, write_fn)
+    elif isinstance(x, float):
+        _pack_float(x, write_fn)
+    elif compatibility and isinstance(x, str):
+        _pack_oldspec_raw(x.encode('utf-8'), write_fn)
+    elif compatibility and isinstance(x, bytes):
+        _pack_oldspec_raw(x, write_fn)
+    elif isinstance(x, str):
+        _pack_string(x, write_fn)
+    elif isinstance(x, bytes):
+        _pack_binary(x, write_fn)
+    elif isinstance(x, list) or isinstance(x, tuple):
+        _pack_array(x, write_fn)
+    elif isinstance(x, dict):
+        _pack_map(x, write_fn)
+    elif isinstance(x, Ext):
+        _pack_ext(x, write_fn)
+    else:
+        raise UnsupportedTypeException("unsupported type: %s" % str(type(x)))
+
 def _packb2(x):
     """
     Serialize a Python object into MessagePack bytes.
@@ -348,34 +401,12 @@ def _packb2(x):
     '\x82\xa7compact\xc3\xa6schema\x00'
     >>>
     """
-    global compatibility
+    l = []
+    def write_fn(s):
+        l.append(s)
+    _pack2(x, write_fn)
+    return "".join(l)
 
-    if x is None:
-        return _pack_nil(x)
-    elif isinstance(x, bool):
-        return _pack_boolean(x)
-    elif isinstance(x, int) or isinstance(x, long):
-        return _pack_integer(x)
-    elif isinstance(x, float):
-        return _pack_float(x)
-    elif compatibility and isinstance(x, unicode):
-        return _pack_oldspec_raw(bytes(x))
-    elif compatibility and isinstance(x, bytes):
-        return _pack_oldspec_raw(x)
-    elif isinstance(x, unicode):
-        return _pack_string(x)
-    elif isinstance(x, str):
-        return _pack_binary(x)
-    elif isinstance(x, list) or isinstance(x, tuple):
-        return _pack_array(x)
-    elif isinstance(x, dict):
-        return _pack_map(x)
-    elif isinstance(x, Ext):
-        return _pack_ext(x)
-    else:
-        raise UnsupportedTypeException("unsupported type: %s" % str(type(x)))
-
-# Pack for Python 3, with unicode 'str' type, 'bytes' type, and no 'long' type
 def _packb3(x):
     """
     Serialize a Python object into MessagePack bytes.
@@ -395,32 +426,11 @@ def _packb3(x):
     b'\x82\xa7compact\xc3\xa6schema\x00'
     >>>
     """
-    global compatibility
-
-    if x is None:
-        return _pack_nil(x)
-    elif isinstance(x, bool):
-        return _pack_boolean(x)
-    elif isinstance(x, int):
-        return _pack_integer(x)
-    elif isinstance(x, float):
-        return _pack_float(x)
-    elif compatibility and isinstance(x, str):
-        return _pack_oldspec_raw(x.encode('utf-8'))
-    elif compatibility and isinstance(x, bytes):
-        return _pack_oldspec_raw(x)
-    elif isinstance(x, str):
-        return _pack_string(x)
-    elif isinstance(x, bytes):
-        return _pack_binary(x)
-    elif isinstance(x, list) or isinstance(x, tuple):
-        return _pack_array(x)
-    elif isinstance(x, dict):
-        return _pack_map(x)
-    elif isinstance(x, Ext):
-        return _pack_ext(x)
-    else:
-        raise UnsupportedTypeException("unsupported type: %s" % str(type(x)))
+    l = []
+    def write_fn(s):
+        l.append(s)
+    _pack3(x, write_fn)
+    return b"".join(l)
 
 ################################################################################
 ### Unpacking
@@ -676,6 +686,7 @@ def __init():
     global dumps
     global loads
     global compatibility
+    global _pack
     global _float_size
     global _unpack_dispatch_table
 
@@ -690,11 +701,13 @@ def __init():
 
     # Map packb and unpackb to the appropriate version
     if sys.version_info[0] == 3:
+        _pack = _pack3
         packb = _packb3
         dumps = _packb3
         unpackb = _unpackb3
         loads = _unpackb3
     else:
+        _pack = _pack2
         packb = _packb2
         dumps = _packb2
         unpackb = _unpackb2
