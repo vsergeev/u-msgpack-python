@@ -50,6 +50,7 @@ version = (1,8)
 import struct
 import collections
 import sys
+import abc
 
 ################################################################################
 ### Ext Class
@@ -124,6 +125,46 @@ class Ext:
             s += " ..."
         s += ")"
         return s
+
+################################################################################
+### Streaming Interface
+################################################################################
+
+class Writer:
+    """
+    The Writer abstract base class specifies the interface for streaming
+    serialization with umsgpack. Deriving from this base class and providing an
+    implementation of the write() method enables umsgpack to serialize objects
+    into a stream of bytes written by your derived class.
+    """
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def write(self, data):
+        """
+        Write serialized data bytes. Argument is type 'str' in Python2 or type
+        'bytes' in Python3. May raise a custom exception on writing error.
+        """
+        raise NotImplementedError()
+
+class Reader:
+    """
+    The Reader abstract base class specifies the interface for streaming
+    deserialization with umsgpack. Deriving from this base class and providing
+    an implementation of the read() method enables umsgpack to deserialize
+    objects from a stream of bytes read by your derived class.
+    """
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def read(self, n):
+        """
+        Read n bytes of data and return them. Should return type 'str' in
+        Python2 or type 'bytes' in Python3. May raise InsufficientDataException
+        on premature end of stream to be consistent with umsgpack's unpackb() or
+        loads(). May raise a custom exception on other reading error.
+        """
+        return NotImplementedError()
 
 ################################################################################
 ### Exceptions
@@ -204,183 +245,195 @@ b'\x92\xabsome string\xaasome bytes'
 # has a str return type instead of bytes in Python 3, and struct.pack(...) has
 # the right return type in both versions.
 
-def _pack_integer(x, write_fn):
+def _pack_integer(x, writer):
     if x < 0:
         if x >= -32:
-            write_fn(struct.pack("b", x))
+            writer.write(struct.pack("b", x))
         elif x >= -2**(8-1):
-            write_fn(b"\xd0" + struct.pack("b", x))
+            writer.write(b"\xd0" + struct.pack("b", x))
         elif x >= -2**(16-1):
-            write_fn(b"\xd1" + struct.pack(">h", x))
+            writer.write(b"\xd1" + struct.pack(">h", x))
         elif x >= -2**(32-1):
-            write_fn(b"\xd2" + struct.pack(">i", x))
+            writer.write(b"\xd2" + struct.pack(">i", x))
         elif x >= -2**(64-1):
-            write_fn(b"\xd3" + struct.pack(">q", x))
+            writer.write(b"\xd3" + struct.pack(">q", x))
         else:
             raise UnsupportedTypeException("huge signed int")
     else:
         if x <= 127:
-            write_fn(struct.pack("B", x))
+            writer.write(struct.pack("B", x))
         elif x <= 2**8-1:
-            write_fn(b"\xcc" + struct.pack("B", x))
+            writer.write(b"\xcc" + struct.pack("B", x))
         elif x <= 2**16-1:
-            write_fn(b"\xcd" + struct.pack(">H", x))
+            writer.write(b"\xcd" + struct.pack(">H", x))
         elif x <= 2**32-1:
-            write_fn(b"\xce" + struct.pack(">I", x))
+            writer.write(b"\xce" + struct.pack(">I", x))
         elif x <= 2**64-1:
-            write_fn(b"\xcf" + struct.pack(">Q", x))
+            writer.write(b"\xcf" + struct.pack(">Q", x))
         else:
             raise UnsupportedTypeException("huge unsigned int")
 
-def _pack_nil(x, write_fn):
-    write_fn(b"\xc0")
+def _pack_nil(x, writer):
+    writer.write(b"\xc0")
 
-def _pack_boolean(x, write_fn):
-    write_fn(b"\xc3" if x else b"\xc2")
+def _pack_boolean(x, writer):
+    writer.write(b"\xc3" if x else b"\xc2")
 
-def _pack_float(x, write_fn):
+def _pack_float(x, writer):
     if _float_size == 64:
-        write_fn(b"\xcb" + struct.pack(">d", x))
+        writer.write(b"\xcb" + struct.pack(">d", x))
     else:
-        write_fn(b"\xca" + struct.pack(">f", x))
+        writer.write(b"\xca" + struct.pack(">f", x))
 
-def _pack_string(x, write_fn):
+def _pack_string(x, writer):
     x = x.encode('utf-8')
     if len(x) <= 31:
-        write_fn(struct.pack("B", 0xa0 | len(x)) + x)
+        writer.write(struct.pack("B", 0xa0 | len(x)) + x)
     elif len(x) <= 2**8-1:
-        write_fn(b"\xd9" + struct.pack("B", len(x)) + x)
+        writer.write(b"\xd9" + struct.pack("B", len(x)) + x)
     elif len(x) <= 2**16-1:
-        write_fn(b"\xda" + struct.pack(">H", len(x)) + x)
+        writer.write(b"\xda" + struct.pack(">H", len(x)) + x)
     elif len(x) <= 2**32-1:
-        write_fn(b"\xdb" + struct.pack(">I", len(x)) + x)
+        writer.write(b"\xdb" + struct.pack(">I", len(x)) + x)
     else:
         raise UnsupportedTypeException("huge string")
 
-def _pack_binary(x, write_fn):
+def _pack_binary(x, writer):
     if len(x) <= 2**8-1:
-        write_fn(b"\xc4" + struct.pack("B", len(x)) + x)
+        writer.write(b"\xc4" + struct.pack("B", len(x)) + x)
     elif len(x) <= 2**16-1:
-        write_fn(b"\xc5" + struct.pack(">H", len(x)) + x)
+        writer.write(b"\xc5" + struct.pack(">H", len(x)) + x)
     elif len(x) <= 2**32-1:
-        write_fn(b"\xc6" + struct.pack(">I", len(x)) + x)
+        writer.write(b"\xc6" + struct.pack(">I", len(x)) + x)
     else:
         raise UnsupportedTypeException("huge binary string")
 
-def _pack_oldspec_raw(x, write_fn):
+def _pack_oldspec_raw(x, writer):
     if len(x) <= 31:
-        write_fn(struct.pack("B", 0xa0 | len(x)) + x)
+        writer.write(struct.pack("B", 0xa0 | len(x)) + x)
     elif len(x) <= 2**16-1:
-        write_fn(b"\xda" + struct.pack(">H", len(x)) + x)
+        writer.write(b"\xda" + struct.pack(">H", len(x)) + x)
     elif len(x) <= 2**32-1:
-        write_fn(b"\xdb" + struct.pack(">I", len(x)) + x)
+        writer.write(b"\xdb" + struct.pack(">I", len(x)) + x)
     else:
         raise UnsupportedTypeException("huge raw string")
 
-def _pack_ext(x, write_fn):
+def _pack_ext(x, writer):
     if len(x.data) == 1:
-        write_fn(b"\xd4" + struct.pack("B", x.type & 0xff) + x.data)
+        writer.write(b"\xd4" + struct.pack("B", x.type & 0xff) + x.data)
     elif len(x.data) == 2:
-        write_fn(b"\xd5" + struct.pack("B", x.type & 0xff) + x.data)
+        writer.write(b"\xd5" + struct.pack("B", x.type & 0xff) + x.data)
     elif len(x.data) == 4:
-        write_fn(b"\xd6" + struct.pack("B", x.type & 0xff) + x.data)
+        writer.write(b"\xd6" + struct.pack("B", x.type & 0xff) + x.data)
     elif len(x.data) == 8:
-        write_fn(b"\xd7" + struct.pack("B", x.type & 0xff) + x.data)
+        writer.write(b"\xd7" + struct.pack("B", x.type & 0xff) + x.data)
     elif len(x.data) == 16:
-        write_fn(b"\xd8" + struct.pack("B", x.type & 0xff) + x.data)
+        writer.write(b"\xd8" + struct.pack("B", x.type & 0xff) + x.data)
     elif len(x.data) <= 2**8-1:
-        write_fn(b"\xc7" + struct.pack("BB", len(x.data), x.type & 0xff) + x.data)
+        writer.write(b"\xc7" + struct.pack("BB", len(x.data), x.type & 0xff) + x.data)
     elif len(x.data) <= 2**16-1:
-        write_fn(b"\xc8" + struct.pack(">HB", len(x.data), x.type & 0xff) + x.data)
+        writer.write(b"\xc8" + struct.pack(">HB", len(x.data), x.type & 0xff) + x.data)
     elif len(x.data) <= 2**32-1:
-        write_fn(b"\xc9" + struct.pack(">IB", len(x.data), x.type & 0xff) + x.data)
+        writer.write(b"\xc9" + struct.pack(">IB", len(x.data), x.type & 0xff) + x.data)
     else:
         raise UnsupportedTypeException("huge ext data")
 
-def _pack_array(x, write_fn):
+def _pack_array(x, writer):
     if len(x) <= 15:
-        write_fn(struct.pack("B", 0x90 | len(x)))
+        writer.write(struct.pack("B", 0x90 | len(x)))
     elif len(x) <= 2**16-1:
-        write_fn(b"\xdc" + struct.pack(">H", len(x)))
+        writer.write(b"\xdc" + struct.pack(">H", len(x)))
     elif len(x) <= 2**32-1:
-        write_fn(b"\xdd" + struct.pack(">I", len(x)))
+        writer.write(b"\xdd" + struct.pack(">I", len(x)))
     else:
         raise UnsupportedTypeException("huge array")
 
     for e in x:
-        _pack(e, write_fn)
+        _pack(e, writer)
 
-def _pack_map(x, write_fn):
+def _pack_map(x, writer):
     if len(x) <= 15:
-        write_fn(struct.pack("B", 0x80 | len(x)))
+        writer.write(struct.pack("B", 0x80 | len(x)))
     elif len(x) <= 2**16-1:
-        write_fn(b"\xde" + struct.pack(">H", len(x)))
+        writer.write(b"\xde" + struct.pack(">H", len(x)))
     elif len(x) <= 2**32-1:
-        write_fn(b"\xdf" + struct.pack(">I", len(x)))
+        writer.write(b"\xdf" + struct.pack(">I", len(x)))
     else:
         raise UnsupportedTypeException("huge array")
 
     for k,v in x.items():
-        _pack(k, write_fn)
-        _pack(v, write_fn)
+        _pack(k, writer)
+        _pack(v, writer)
 
 # Pack for Python 2, with 'unicode' type, 'str' type, and 'long' type
-def _pack2(x, write_fn):
+def _pack2(x, writer):
     global compatibility
 
     if x is None:
-        _pack_nil(x, write_fn)
+        _pack_nil(x, writer)
     elif isinstance(x, bool):
-        _pack_boolean(x, write_fn)
+        _pack_boolean(x, writer)
     elif isinstance(x, int) or isinstance(x, long):
-        _pack_integer(x, write_fn)
+        _pack_integer(x, writer)
     elif isinstance(x, float):
-        _pack_float(x, write_fn)
+        _pack_float(x, writer)
     elif compatibility and isinstance(x, unicode):
-        _pack_oldspec_raw(bytes(x), write_fn)
+        _pack_oldspec_raw(bytes(x), writer)
     elif compatibility and isinstance(x, bytes):
-        _pack_oldspec_raw(x, write_fn)
+        _pack_oldspec_raw(x, writer)
     elif isinstance(x, unicode):
-        _pack_string(x, write_fn)
+        _pack_string(x, writer)
     elif isinstance(x, str):
-        _pack_binary(x, write_fn)
+        _pack_binary(x, writer)
     elif isinstance(x, list) or isinstance(x, tuple):
-        _pack_array(x, write_fn)
+        _pack_array(x, writer)
     elif isinstance(x, dict):
-        _pack_map(x, write_fn)
+        _pack_map(x, writer)
     elif isinstance(x, Ext):
-        _pack_ext(x, write_fn)
+        _pack_ext(x, writer)
     else:
         raise UnsupportedTypeException("unsupported type: %s" % str(type(x)))
 
 # Pack for Python 3, with unicode 'str' type, 'bytes' type, and no 'long' type
-def _pack3(x, write_fn):
+def _pack3(x, writer):
     global compatibility
 
     if x is None:
-        _pack_nil(x, write_fn)
+        _pack_nil(x, writer)
     elif isinstance(x, bool):
-        _pack_boolean(x, write_fn)
+        _pack_boolean(x, writer)
     elif isinstance(x, int):
-        _pack_integer(x, write_fn)
+        _pack_integer(x, writer)
     elif isinstance(x, float):
-        _pack_float(x, write_fn)
+        _pack_float(x, writer)
     elif compatibility and isinstance(x, str):
-        _pack_oldspec_raw(x.encode('utf-8'), write_fn)
+        _pack_oldspec_raw(x.encode('utf-8'), writer)
     elif compatibility and isinstance(x, bytes):
-        _pack_oldspec_raw(x, write_fn)
+        _pack_oldspec_raw(x, writer)
     elif isinstance(x, str):
-        _pack_string(x, write_fn)
+        _pack_string(x, writer)
     elif isinstance(x, bytes):
-        _pack_binary(x, write_fn)
+        _pack_binary(x, writer)
     elif isinstance(x, list) or isinstance(x, tuple):
-        _pack_array(x, write_fn)
+        _pack_array(x, writer)
     elif isinstance(x, dict):
-        _pack_map(x, write_fn)
+        _pack_map(x, writer)
     elif isinstance(x, Ext):
-        _pack_ext(x, write_fn)
+        _pack_ext(x, writer)
     else:
         raise UnsupportedTypeException("unsupported type: %s" % str(type(x)))
+
+########################################
+
+class _BytesWriter(Writer):
+    def __init__(self):
+        self.l = []
+
+    def write(self, data):
+        self.l.append(data)
+
+    def bytes(self):
+        return b''.join(self.l)
 
 def _packb2(x):
     """
@@ -401,11 +454,9 @@ def _packb2(x):
     '\x82\xa7compact\xc3\xa6schema\x00'
     >>>
     """
-    l = []
-    def write_fn(s):
-        l.append(s)
-    _pack2(x, write_fn)
-    return "".join(l)
+    writer = _BytesWriter()
+    _pack2(x, writer)
+    return writer.bytes()
 
 def _packb3(x):
     """
@@ -426,98 +477,96 @@ def _packb3(x):
     b'\x82\xa7compact\xc3\xa6schema\x00'
     >>>
     """
-    l = []
-    def write_fn(s):
-        l.append(s)
-    _pack3(x, write_fn)
-    return b"".join(l)
+    writer = _BytesWriter()
+    _pack3(x, writer)
+    return writer.bytes()
 
 ################################################################################
 ### Unpacking
 ################################################################################
 
-def _unpack_integer(code, read_fn):
+def _unpack_integer(code, reader):
     if (ord(code) & 0xe0) == 0xe0:
         return struct.unpack("b", code)[0]
     elif code == b'\xd0':
-        return struct.unpack("b", read_fn(1))[0]
+        return struct.unpack("b", reader.read(1))[0]
     elif code == b'\xd1':
-        return struct.unpack(">h", read_fn(2))[0]
+        return struct.unpack(">h", reader.read(2))[0]
     elif code == b'\xd2':
-        return struct.unpack(">i", read_fn(4))[0]
+        return struct.unpack(">i", reader.read(4))[0]
     elif code == b'\xd3':
-        return struct.unpack(">q", read_fn(8))[0]
+        return struct.unpack(">q", reader.read(8))[0]
     elif (ord(code) & 0x80) == 0x00:
         return struct.unpack("B", code)[0]
     elif code == b'\xcc':
-        return struct.unpack("B", read_fn(1))[0]
+        return struct.unpack("B", reader.read(1))[0]
     elif code == b'\xcd':
-        return struct.unpack(">H", read_fn(2))[0]
+        return struct.unpack(">H", reader.read(2))[0]
     elif code == b'\xce':
-        return struct.unpack(">I", read_fn(4))[0]
+        return struct.unpack(">I", reader.read(4))[0]
     elif code == b'\xcf':
-        return struct.unpack(">Q", read_fn(8))[0]
+        return struct.unpack(">Q", reader.read(8))[0]
     raise Exception("logic error, not int: 0x%02x" % ord(code))
 
-def _unpack_reserved(code, read_fn):
+def _unpack_reserved(code, reader):
     if code == b'\xc1':
         raise ReservedCodeException("encountered reserved code: 0x%02x" % ord(code))
     raise Exception("logic error, not reserved code: 0x%02x" % ord(code))
 
-def _unpack_nil(code, read_fn):
+def _unpack_nil(code, reader):
     if code == b'\xc0':
         return None
     raise Exception("logic error, not nil: 0x%02x" % ord(code))
 
-def _unpack_boolean(code, read_fn):
+def _unpack_boolean(code, reader):
     if code == b'\xc2':
         return False
     elif code == b'\xc3':
         return True
     raise Exception("logic error, not boolean: 0x%02x" % ord(code))
 
-def _unpack_float(code, read_fn):
+def _unpack_float(code, reader):
     if code == b'\xca':
-        return struct.unpack(">f", read_fn(4))[0]
+        return struct.unpack(">f", reader.read(4))[0]
     elif code == b'\xcb':
-        return struct.unpack(">d", read_fn(8))[0]
+        return struct.unpack(">d", reader.read(8))[0]
     raise Exception("logic error, not float: 0x%02x" % ord(code))
 
-def _unpack_string(code, read_fn):
+def _unpack_string(code, reader):
     if (ord(code) & 0xe0) == 0xa0:
         length = ord(code) & ~0xe0
     elif code == b'\xd9':
-        length = struct.unpack("B", read_fn(1))[0]
+        length = struct.unpack("B", reader.read(1))[0]
     elif code == b'\xda':
-        length = struct.unpack(">H", read_fn(2))[0]
+        length = struct.unpack(">H", reader.read(2))[0]
     elif code == b'\xdb':
-        length = struct.unpack(">I", read_fn(4))[0]
+        length = struct.unpack(">I", reader.read(4))[0]
     else:
         raise Exception("logic error, not string: 0x%02x" % ord(code))
 
     # Always return raw bytes in compatibility mode
     global compatibility
     if compatibility:
-        return read_fn(length)
+        return reader.read(length)
 
     try:
-        return bytes.decode(read_fn(length), 'utf-8')
+        return bytes.decode(reader.read(length), 'utf-8')
     except UnicodeDecodeError:
         raise InvalidStringException("unpacked string is not utf-8")
 
-def _unpack_binary(code, read_fn):
+def _unpack_binary(code, reader):
     if code == b'\xc4':
-        length = struct.unpack("B", read_fn(1))[0]
+        length = struct.unpack("B", reader.read(1))[0]
     elif code == b'\xc5':
-        length = struct.unpack(">H", read_fn(2))[0]
+        length = struct.unpack(">H", reader.read(2))[0]
     elif code == b'\xc6':
-        length = struct.unpack(">I", read_fn(4))[0]
+        length = struct.unpack(">I", reader.read(4))[0]
     else:
         raise Exception("logic error, not binary: 0x%02x" % ord(code))
 
-    return read_fn(length)
+    return reader.read(length)
 
-def _unpack_ext(code, read_fn):
+def _unpack_ext(code, reader):
     if code == b'\xd4':
         length = 1
     elif code == b'\xd5':
@@ -529,47 +578,47 @@ def _unpack_ext(code, read_fn):
     elif code == b'\xd8':
         length = 16
     elif code == b'\xc7':
-        length = struct.unpack("B", read_fn(1))[0]
+        length = struct.unpack("B", reader.read(1))[0]
     elif code == b'\xc8':
-        length = struct.unpack(">H", read_fn(2))[0]
+        length = struct.unpack(">H", reader.read(2))[0]
     elif code == b'\xc9':
-        length = struct.unpack(">I", read_fn(4))[0]
+        length = struct.unpack(">I", reader.read(4))[0]
     else:
         raise Exception("logic error, not ext: 0x%02x" % ord(code))
 
-    return Ext(ord(read_fn(1)), read_fn(length))
+    return Ext(ord(reader.read(1)), reader.read(length))
 
-def _unpack_array(code, read_fn):
+def _unpack_array(code, reader):
     if (ord(code) & 0xf0) == 0x90:
         length = (ord(code) & ~0xf0)
     elif code == b'\xdc':
-        length = struct.unpack(">H", read_fn(2))[0]
+        length = struct.unpack(">H", reader.read(2))[0]
     elif code == b'\xdd':
-        length = struct.unpack(">I", read_fn(4))[0]
+        length = struct.unpack(">I", reader.read(4))[0]
     else:
         raise Exception("logic error, not array: 0x%02x" % ord(code))
 
-    return [_unpackb(read_fn) for i in range(length)]
+    return [_unpackb(reader) for i in range(length)]
 
 def _deep_list_to_tuple(x):
     if isinstance(x, list):
         return tuple([_deep_list_to_tuple(e) for e in x])
     return x
 
-def _unpack_map(code, read_fn):
+def _unpack_map(code, reader):
     if (ord(code) & 0xf0) == 0x80:
         length = (ord(code) & ~0xf0)
     elif code == b'\xde':
-        length = struct.unpack(">H", read_fn(2))[0]
+        length = struct.unpack(">H", reader.read(2))[0]
     elif code == b'\xdf':
-        length = struct.unpack(">I", read_fn(4))[0]
+        length = struct.unpack(">I", reader.read(4))[0]
     else:
         raise Exception("logic error, not map: 0x%02x" % ord(code))
 
     d = {}
     for i in range(length):
         # Unpack key
-        k = _unpackb(read_fn)
+        k = _unpackb(reader)
 
         if isinstance(k, list):
             # Attempt to convert list into a hashable tuple
@@ -580,7 +629,7 @@ def _unpack_map(code, read_fn):
             raise DuplicateKeyException("encountered duplicate key: %s, %s" % (str(k), str(type(k))))
 
         # Unpack value
-        v = _unpackb(read_fn)
+        v = _unpackb(reader)
 
         try:
             d[k] = v
@@ -588,21 +637,23 @@ def _unpack_map(code, read_fn):
             raise UnhashableKeyException("encountered unhashable key: %s" % str(k))
     return d
 
+def _unpackb(reader):
+    code = reader.read(1)
+    return _unpack_dispatch_table[code](code, reader)
+
 ########################################
 
-def _byte_reader(s):
-    i = [0]
-    def read_fn(n):
-        if (i[0]+n > len(s)):
-            raise InsufficientDataException()
-        substring = s[i[0]:i[0]+n]
-        i[0] += n
-        return substring
-    return read_fn
+class _BytesReader(Reader):
+    def __init__(self, s):
+        self.s = s
+        self.index = 0
 
-def _unpackb(read_fn):
-    code = read_fn(1)
-    return _unpack_dispatch_table[code](code, read_fn)
+    def read(self, n):
+        if (self.index+n > len(self.s)):
+            raise InsufficientDataException()
+        substring = self.s[ self.index : self.index+n ]
+        self.index += n
+        return substring
 
 # For Python 2, expects a str object
 def _unpackb2(s):
@@ -637,8 +688,8 @@ def _unpackb2(s):
     """
     if not isinstance(s, str):
         raise TypeError("packed data is not type 'str'")
-    read_fn = _byte_reader(s)
-    return _unpackb(read_fn)
+    reader = _BytesReader(s)
+    return _unpackb(reader)
 
 # For Python 3, expects a bytes object
 def _unpackb3(s):
@@ -673,8 +724,8 @@ def _unpackb3(s):
     """
     if not isinstance(s, bytes):
         raise TypeError("packed data is not type 'bytes'")
-    read_fn = _byte_reader(s)
-    return _unpackb(read_fn)
+    reader = _BytesReader(s)
+    return _unpackb(reader)
 
 ################################################################################
 ### Module Initialization
