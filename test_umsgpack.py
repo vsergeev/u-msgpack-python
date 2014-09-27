@@ -256,12 +256,8 @@ class TestUmsgpack(unittest.TestCase):
         for (name, obj, exception) in pack_exception_test_vectors:
             obj_repr = repr(obj)
             print("\tTesting %s: object %s" % (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
-            try:
+            with self.assertRaises(exception):
                 umsgpack.packb(obj)
-            except Exception as e:
-                self.assertTrue(isinstance(e, exception))
-                continue
-            self.assertTrue(False)
 
     def test_unpack_single(self):
         for (name, obj, data) in single_test_vectors:
@@ -292,12 +288,8 @@ class TestUmsgpack(unittest.TestCase):
     def test_unpack_exceptions(self):
         for (name, data, exception) in unpack_exception_test_vectors:
             print("\tTesting %s" % name)
-            try:
+            with self.assertRaises(exception):
                 umsgpack.unpackb(data)
-            except Exception as e:
-                self.assertTrue(isinstance(e, exception))
-                continue
-            self.assertTrue(False)
 
     def test_pack_compatibility(self):
         umsgpack.compatibility = True
@@ -332,18 +324,14 @@ class TestUmsgpack(unittest.TestCase):
         umsgpack.compatibility = False
 
     def test_ext_exceptions(self):
-        try:
+        with self.assertRaises(TypeError):
             _ = umsgpack.Ext(-1, b"")
-        except Exception as e:
-            self.assertTrue(isinstance(e, TypeError))
-        try:
+
+        with self.assertRaises(TypeError):
             _ = umsgpack.Ext(128, b"")
-        except Exception as e:
-            self.assertTrue(isinstance(e, TypeError))
-        try:
+
+        with self.assertRaises(TypeError):
             _ = umsgpack.Ext(0, u"unicode string")
-        except Exception as e:
-            self.assertTrue(isinstance(e, TypeError))
 
     def test_namespacing(self):
         # Get a list of global variables from umsgpack module
