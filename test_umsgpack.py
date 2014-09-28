@@ -11,6 +11,7 @@ import umsgpack
 import sys
 import struct
 import unittest
+import io
 
 single_test_vectors = [
     # None
@@ -143,6 +144,9 @@ pack_exception_test_vectors = [
 ]
 
 unpack_exception_test_vectors = [
+    # Type errors
+    [ "type error unpack unicode string", u"\x01", TypeError ],
+    [ "type error unpack boolean", True, TypeError ],
     # Insufficient data to unpack object
     [ "insufficient data 8-bit uint", b"\xcc", umsgpack.InsufficientDataException ],
     [ "insufficient data 16-bit uint", b"\xcd\xff", umsgpack.InsufficientDataException ],
@@ -227,14 +231,16 @@ exported_vars_test_vector = [
     "DuplicateKeyException",
     "KeyNotPrimitiveException",
     "KeyDuplicateException",
+    "pack",
     "packb",
+    "unpack",
     "unpackb",
+    "dump",
     "dumps",
+    "load",
     "loads",
     "version",
     "compatibility",
-    "Writer",
-    "Reader"
 ]
 
 ################################################################################
@@ -333,11 +339,24 @@ class TestUmsgpack(unittest.TestCase):
         with self.assertRaises(TypeError):
             _ = umsgpack.Ext(0, u"unicode string")
 
+    def test_streaming_writer(self):
+        # Try first composite test vector
+        (name, obj, data) = composite_test_vectors[0]
+        writer = io.BytesIO()
+        umsgpack.pack(obj, writer)
+        self.assertTrue(writer.getvalue(), data)
+
+    def test_streaming_reader(self):
+        # Try first composite test vector
+        (name, obj, data) = composite_test_vectors[0]
+        reader = io.BytesIO(data)
+        self.assertEqual(umsgpack.unpack(reader), obj)
+
     def test_namespacing(self):
         # Get a list of global variables from umsgpack module
         exported_vars = list(filter(lambda x: not x.startswith("_"), dir(umsgpack)))
-        # Ignore struct, collections, and sys imports
-        exported_vars = list(filter(lambda x: x != "struct" and x != "collections" and x != "sys" and x != "abc", exported_vars))
+        # Ignore imports
+        exported_vars = list(filter(lambda x: x != "struct" and x != "collections" and x != "sys" and x != "io", exported_vars))
 
         self.assertTrue(len(exported_vars) == len(exported_vars_test_vector))
         for var in exported_vars_test_vector:

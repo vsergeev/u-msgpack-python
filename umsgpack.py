@@ -50,7 +50,7 @@ version = (1,8)
 import struct
 import collections
 import sys
-import abc
+import io
 
 ################################################################################
 ### Ext Class
@@ -127,46 +127,6 @@ class Ext:
         return s
 
 ################################################################################
-### Streaming Interface
-################################################################################
-
-class Writer:
-    """
-    The Writer abstract base class specifies the interface for streaming
-    serialization with umsgpack. Deriving from this base class and providing an
-    implementation of the write() method enables umsgpack to serialize objects
-    into a stream of bytes written by your derived class.
-    """
-    __metaclass__ = abc.ABCMeta
-
-    @abc.abstractmethod
-    def write(self, data):
-        """
-        Write serialized data bytes. Argument is type 'str' in Python2 or type
-        'bytes' in Python3. May raise a custom exception on writing error.
-        """
-        raise NotImplementedError()
-
-class Reader:
-    """
-    The Reader abstract base class specifies the interface for streaming
-    deserialization with umsgpack. Deriving from this base class and providing
-    an implementation of the read() method enables umsgpack to deserialize
-    objects from a stream of bytes read by your derived class.
-    """
-    __metaclass__ = abc.ABCMeta
-
-    @abc.abstractmethod
-    def read(self, n):
-        """
-        Read n bytes of data and return them. Should return type 'str' in
-        Python2 or type 'bytes' in Python3. May raise InsufficientDataException
-        on premature end of stream to be consistent with umsgpack's unpackb() or
-        loads(). May raise a custom exception on other reading error.
-        """
-        return NotImplementedError()
-
-################################################################################
 ### Exceptions
 ################################################################################
 
@@ -212,9 +172,13 @@ KeyDuplicateException = DuplicateKeyException
 ################################################################################
 
 # Exported functions and variables set in __init()
+pack = None
 packb = None
+unpack = None
 unpackb = None
+dump = None
 dumps = None
+load = None
 loads = None
 
 compatibility = False
@@ -245,202 +209,231 @@ b'\x92\xabsome string\xaasome bytes'
 # has a str return type instead of bytes in Python 3, and struct.pack(...) has
 # the right return type in both versions.
 
-def _pack_integer(x, writer):
+def _pack_integer(x, fp):
     if x < 0:
         if x >= -32:
-            writer.write(struct.pack("b", x))
+            fp.write(struct.pack("b", x))
         elif x >= -2**(8-1):
-            writer.write(b"\xd0" + struct.pack("b", x))
+            fp.write(b"\xd0" + struct.pack("b", x))
         elif x >= -2**(16-1):
-            writer.write(b"\xd1" + struct.pack(">h", x))
+            fp.write(b"\xd1" + struct.pack(">h", x))
         elif x >= -2**(32-1):
-            writer.write(b"\xd2" + struct.pack(">i", x))
+            fp.write(b"\xd2" + struct.pack(">i", x))
         elif x >= -2**(64-1):
-            writer.write(b"\xd3" + struct.pack(">q", x))
+            fp.write(b"\xd3" + struct.pack(">q", x))
         else:
             raise UnsupportedTypeException("huge signed int")
     else:
         if x <= 127:
-            writer.write(struct.pack("B", x))
+            fp.write(struct.pack("B", x))
         elif x <= 2**8-1:
-            writer.write(b"\xcc" + struct.pack("B", x))
+            fp.write(b"\xcc" + struct.pack("B", x))
         elif x <= 2**16-1:
-            writer.write(b"\xcd" + struct.pack(">H", x))
+            fp.write(b"\xcd" + struct.pack(">H", x))
         elif x <= 2**32-1:
-            writer.write(b"\xce" + struct.pack(">I", x))
+            fp.write(b"\xce" + struct.pack(">I", x))
         elif x <= 2**64-1:
-            writer.write(b"\xcf" + struct.pack(">Q", x))
+            fp.write(b"\xcf" + struct.pack(">Q", x))
         else:
             raise UnsupportedTypeException("huge unsigned int")
 
-def _pack_nil(x, writer):
-    writer.write(b"\xc0")
+def _pack_nil(x, fp):
+    fp.write(b"\xc0")
 
-def _pack_boolean(x, writer):
-    writer.write(b"\xc3" if x else b"\xc2")
+def _pack_boolean(x, fp):
+    fp.write(b"\xc3" if x else b"\xc2")
 
-def _pack_float(x, writer):
+def _pack_float(x, fp):
     if _float_size == 64:
-        writer.write(b"\xcb" + struct.pack(">d", x))
+        fp.write(b"\xcb" + struct.pack(">d", x))
     else:
-        writer.write(b"\xca" + struct.pack(">f", x))
+        fp.write(b"\xca" + struct.pack(">f", x))
 
-def _pack_string(x, writer):
+def _pack_string(x, fp):
     x = x.encode('utf-8')
     if len(x) <= 31:
-        writer.write(struct.pack("B", 0xa0 | len(x)) + x)
+        fp.write(struct.pack("B", 0xa0 | len(x)) + x)
     elif len(x) <= 2**8-1:
-        writer.write(b"\xd9" + struct.pack("B", len(x)) + x)
+        fp.write(b"\xd9" + struct.pack("B", len(x)) + x)
     elif len(x) <= 2**16-1:
-        writer.write(b"\xda" + struct.pack(">H", len(x)) + x)
+        fp.write(b"\xda" + struct.pack(">H", len(x)) + x)
     elif len(x) <= 2**32-1:
-        writer.write(b"\xdb" + struct.pack(">I", len(x)) + x)
+        fp.write(b"\xdb" + struct.pack(">I", len(x)) + x)
     else:
         raise UnsupportedTypeException("huge string")
 
-def _pack_binary(x, writer):
+def _pack_binary(x, fp):
     if len(x) <= 2**8-1:
-        writer.write(b"\xc4" + struct.pack("B", len(x)) + x)
+        fp.write(b"\xc4" + struct.pack("B", len(x)) + x)
     elif len(x) <= 2**16-1:
-        writer.write(b"\xc5" + struct.pack(">H", len(x)) + x)
+        fp.write(b"\xc5" + struct.pack(">H", len(x)) + x)
     elif len(x) <= 2**32-1:
-        writer.write(b"\xc6" + struct.pack(">I", len(x)) + x)
+        fp.write(b"\xc6" + struct.pack(">I", len(x)) + x)
     else:
         raise UnsupportedTypeException("huge binary string")
 
-def _pack_oldspec_raw(x, writer):
+def _pack_oldspec_raw(x, fp):
     if len(x) <= 31:
-        writer.write(struct.pack("B", 0xa0 | len(x)) + x)
+        fp.write(struct.pack("B", 0xa0 | len(x)) + x)
     elif len(x) <= 2**16-1:
-        writer.write(b"\xda" + struct.pack(">H", len(x)) + x)
+        fp.write(b"\xda" + struct.pack(">H", len(x)) + x)
     elif len(x) <= 2**32-1:
-        writer.write(b"\xdb" + struct.pack(">I", len(x)) + x)
+        fp.write(b"\xdb" + struct.pack(">I", len(x)) + x)
     else:
         raise UnsupportedTypeException("huge raw string")
 
-def _pack_ext(x, writer):
+def _pack_ext(x, fp):
     if len(x.data) == 1:
-        writer.write(b"\xd4" + struct.pack("B", x.type & 0xff) + x.data)
+        fp.write(b"\xd4" + struct.pack("B", x.type & 0xff) + x.data)
     elif len(x.data) == 2:
-        writer.write(b"\xd5" + struct.pack("B", x.type & 0xff) + x.data)
+        fp.write(b"\xd5" + struct.pack("B", x.type & 0xff) + x.data)
     elif len(x.data) == 4:
-        writer.write(b"\xd6" + struct.pack("B", x.type & 0xff) + x.data)
+        fp.write(b"\xd6" + struct.pack("B", x.type & 0xff) + x.data)
     elif len(x.data) == 8:
-        writer.write(b"\xd7" + struct.pack("B", x.type & 0xff) + x.data)
+        fp.write(b"\xd7" + struct.pack("B", x.type & 0xff) + x.data)
     elif len(x.data) == 16:
-        writer.write(b"\xd8" + struct.pack("B", x.type & 0xff) + x.data)
+        fp.write(b"\xd8" + struct.pack("B", x.type & 0xff) + x.data)
     elif len(x.data) <= 2**8-1:
-        writer.write(b"\xc7" + struct.pack("BB", len(x.data), x.type & 0xff) + x.data)
+        fp.write(b"\xc7" + struct.pack("BB", len(x.data), x.type & 0xff) + x.data)
     elif len(x.data) <= 2**16-1:
-        writer.write(b"\xc8" + struct.pack(">HB", len(x.data), x.type & 0xff) + x.data)
+        fp.write(b"\xc8" + struct.pack(">HB", len(x.data), x.type & 0xff) + x.data)
     elif len(x.data) <= 2**32-1:
-        writer.write(b"\xc9" + struct.pack(">IB", len(x.data), x.type & 0xff) + x.data)
+        fp.write(b"\xc9" + struct.pack(">IB", len(x.data), x.type & 0xff) + x.data)
     else:
         raise UnsupportedTypeException("huge ext data")
 
-def _pack_array(x, writer):
+def _pack_array(x, fp):
     if len(x) <= 15:
-        writer.write(struct.pack("B", 0x90 | len(x)))
+        fp.write(struct.pack("B", 0x90 | len(x)))
     elif len(x) <= 2**16-1:
-        writer.write(b"\xdc" + struct.pack(">H", len(x)))
+        fp.write(b"\xdc" + struct.pack(">H", len(x)))
     elif len(x) <= 2**32-1:
-        writer.write(b"\xdd" + struct.pack(">I", len(x)))
+        fp.write(b"\xdd" + struct.pack(">I", len(x)))
     else:
         raise UnsupportedTypeException("huge array")
 
     for e in x:
-        _pack(e, writer)
+        pack(e, fp)
 
-def _pack_map(x, writer):
+def _pack_map(x, fp):
     if len(x) <= 15:
-        writer.write(struct.pack("B", 0x80 | len(x)))
+        fp.write(struct.pack("B", 0x80 | len(x)))
     elif len(x) <= 2**16-1:
-        writer.write(b"\xde" + struct.pack(">H", len(x)))
+        fp.write(b"\xde" + struct.pack(">H", len(x)))
     elif len(x) <= 2**32-1:
-        writer.write(b"\xdf" + struct.pack(">I", len(x)))
+        fp.write(b"\xdf" + struct.pack(">I", len(x)))
     else:
         raise UnsupportedTypeException("huge array")
 
     for k,v in x.items():
-        _pack(k, writer)
-        _pack(v, writer)
-
-# Pack for Python 2, with 'unicode' type, 'str' type, and 'long' type
-def _pack2(x, writer):
-    global compatibility
-
-    if x is None:
-        _pack_nil(x, writer)
-    elif isinstance(x, bool):
-        _pack_boolean(x, writer)
-    elif isinstance(x, int) or isinstance(x, long):
-        _pack_integer(x, writer)
-    elif isinstance(x, float):
-        _pack_float(x, writer)
-    elif compatibility and isinstance(x, unicode):
-        _pack_oldspec_raw(bytes(x), writer)
-    elif compatibility and isinstance(x, bytes):
-        _pack_oldspec_raw(x, writer)
-    elif isinstance(x, unicode):
-        _pack_string(x, writer)
-    elif isinstance(x, str):
-        _pack_binary(x, writer)
-    elif isinstance(x, list) or isinstance(x, tuple):
-        _pack_array(x, writer)
-    elif isinstance(x, dict):
-        _pack_map(x, writer)
-    elif isinstance(x, Ext):
-        _pack_ext(x, writer)
-    else:
-        raise UnsupportedTypeException("unsupported type: %s" % str(type(x)))
-
-# Pack for Python 3, with unicode 'str' type, 'bytes' type, and no 'long' type
-def _pack3(x, writer):
-    global compatibility
-
-    if x is None:
-        _pack_nil(x, writer)
-    elif isinstance(x, bool):
-        _pack_boolean(x, writer)
-    elif isinstance(x, int):
-        _pack_integer(x, writer)
-    elif isinstance(x, float):
-        _pack_float(x, writer)
-    elif compatibility and isinstance(x, str):
-        _pack_oldspec_raw(x.encode('utf-8'), writer)
-    elif compatibility and isinstance(x, bytes):
-        _pack_oldspec_raw(x, writer)
-    elif isinstance(x, str):
-        _pack_string(x, writer)
-    elif isinstance(x, bytes):
-        _pack_binary(x, writer)
-    elif isinstance(x, list) or isinstance(x, tuple):
-        _pack_array(x, writer)
-    elif isinstance(x, dict):
-        _pack_map(x, writer)
-    elif isinstance(x, Ext):
-        _pack_ext(x, writer)
-    else:
-        raise UnsupportedTypeException("unsupported type: %s" % str(type(x)))
+        pack(k, fp)
+        pack(v, fp)
 
 ########################################
 
-class _BytesWriter(Writer):
-    def __init__(self):
-        self.l = []
-
-    def write(self, data):
-        self.l.append(data)
-
-    def bytes(self):
-        return b''.join(self.l)
-
-def _packb2(x):
+# Pack for Python 2, with 'unicode' type, 'str' type, and 'long' type
+def _pack2(obj, fp):
     """
     Serialize a Python object into MessagePack bytes.
 
     Args:
-        x: Python object
+        obj: a Python object
+        fp: a .write()-supporting file-like object
+
+    Returns:
+        None.
+
+    Raises:
+        UnsupportedType(PackException):
+            Object type not supported for packing.
+
+    Example:
+    >>> f = open('test.bin', 'w')
+    >>> umsgpack.pack({u"compact": True, u"schema": 0}, f)
+    >>>
+    """
+
+    global compatibility
+
+    if obj is None:
+        _pack_nil(obj, fp)
+    elif isinstance(obj, bool):
+        _pack_boolean(obj, fp)
+    elif isinstance(obj, int) or isinstance(obj, long):
+        _pack_integer(obj, fp)
+    elif isinstance(obj, float):
+        _pack_float(obj, fp)
+    elif compatibility and isinstance(obj, unicode):
+        _pack_oldspec_raw(bytes(obj), fp)
+    elif compatibility and isinstance(obj, bytes):
+        _pack_oldspec_raw(obj, fp)
+    elif isinstance(obj, unicode):
+        _pack_string(obj, fp)
+    elif isinstance(obj, str):
+        _pack_binary(obj, fp)
+    elif isinstance(obj, list) or isinstance(obj, tuple):
+        _pack_array(obj, fp)
+    elif isinstance(obj, dict):
+        _pack_map(obj, fp)
+    elif isinstance(obj, Ext):
+        _pack_ext(obj, fp)
+    else:
+        raise UnsupportedTypeException("unsupported type: %s" % str(type(obj)))
+
+# Pack for Python 3, with unicode 'str' type, 'bytes' type, and no 'long' type
+def _pack3(obj, fp):
+    """
+    Serialize a Python object into MessagePack bytes.
+
+    Args:
+        obj: a Python object
+        fp: a .write()-supporting file-like object
+
+    Returns:
+        None.
+
+    Raises:
+        UnsupportedType(PackException):
+            Object type not supported for packing.
+
+    Example:
+    >>> f = open('test.bin', 'w')
+    >>> umsgpack.pack({u"compact": True, u"schema": 0}, fp)
+    >>>
+    """
+    global compatibility
+
+    if obj is None:
+        _pack_nil(obj, fp)
+    elif isinstance(obj, bool):
+        _pack_boolean(obj, fp)
+    elif isinstance(obj, int):
+        _pack_integer(obj, fp)
+    elif isinstance(obj, float):
+        _pack_float(obj, fp)
+    elif compatibility and isinstance(obj, str):
+        _pack_oldspec_raw(obj.encode('utf-8'), fp)
+    elif compatibility and isinstance(obj, bytes):
+        _pack_oldspec_raw(obj, fp)
+    elif isinstance(obj, str):
+        _pack_string(obj, fp)
+    elif isinstance(obj, bytes):
+        _pack_binary(obj, fp)
+    elif isinstance(obj, list) or isinstance(obj, tuple):
+        _pack_array(obj, fp)
+    elif isinstance(obj, dict):
+        _pack_map(obj, fp)
+    elif isinstance(obj, Ext):
+        _pack_ext(obj, fp)
+    else:
+        raise UnsupportedTypeException("unsupported type: %s" % str(type(obj)))
+
+def _packb2(obj):
+    """
+    Serialize a Python object into MessagePack bytes.
+
+    Args:
+        obj: a Python object
 
     Returns:
         A 'str' containing the serialized bytes.
@@ -454,16 +447,16 @@ def _packb2(x):
     '\x82\xa7compact\xc3\xa6schema\x00'
     >>>
     """
-    writer = _BytesWriter()
-    _pack2(x, writer)
-    return writer.bytes()
+    fp = io.BytesIO()
+    _pack2(obj, fp)
+    return fp.getvalue()
 
-def _packb3(x):
+def _packb3(obj):
     """
     Serialize a Python object into MessagePack bytes.
 
     Args:
-        x: Python object
+        obj: a Python object
 
     Returns:
         A 'bytes' containing the serialized bytes.
@@ -477,96 +470,102 @@ def _packb3(x):
     b'\x82\xa7compact\xc3\xa6schema\x00'
     >>>
     """
-    writer = _BytesWriter()
-    _pack3(x, writer)
-    return writer.bytes()
+    fp = io.BytesIO()
+    _pack3(obj, fp)
+    return fp.getvalue()
 
 ################################################################################
 ### Unpacking
 ################################################################################
 
-def _unpack_integer(code, reader):
+def _read_except(fp, n):
+    x = fp.read(n)
+    if len(x) < n:
+        raise InsufficientDataException()
+    return x
+
+def _unpack_integer(code, fp):
     if (ord(code) & 0xe0) == 0xe0:
         return struct.unpack("b", code)[0]
     elif code == b'\xd0':
-        return struct.unpack("b", reader.read(1))[0]
+        return struct.unpack("b", _read_except(fp, 1))[0]
     elif code == b'\xd1':
-        return struct.unpack(">h", reader.read(2))[0]
+        return struct.unpack(">h", _read_except(fp, 2))[0]
     elif code == b'\xd2':
-        return struct.unpack(">i", reader.read(4))[0]
+        return struct.unpack(">i", _read_except(fp, 4))[0]
     elif code == b'\xd3':
-        return struct.unpack(">q", reader.read(8))[0]
+        return struct.unpack(">q", _read_except(fp, 8))[0]
     elif (ord(code) & 0x80) == 0x00:
         return struct.unpack("B", code)[0]
     elif code == b'\xcc':
-        return struct.unpack("B", reader.read(1))[0]
+        return struct.unpack("B", _read_except(fp, 1))[0]
     elif code == b'\xcd':
-        return struct.unpack(">H", reader.read(2))[0]
+        return struct.unpack(">H", _read_except(fp, 2))[0]
     elif code == b'\xce':
-        return struct.unpack(">I", reader.read(4))[0]
+        return struct.unpack(">I", _read_except(fp, 4))[0]
     elif code == b'\xcf':
-        return struct.unpack(">Q", reader.read(8))[0]
+        return struct.unpack(">Q", _read_except(fp, 8))[0]
     raise Exception("logic error, not int: 0x%02x" % ord(code))
 
-def _unpack_reserved(code, reader):
+def _unpack_reserved(code, fp):
     if code == b'\xc1':
         raise ReservedCodeException("encountered reserved code: 0x%02x" % ord(code))
     raise Exception("logic error, not reserved code: 0x%02x" % ord(code))
 
-def _unpack_nil(code, reader):
+def _unpack_nil(code, fp):
     if code == b'\xc0':
         return None
     raise Exception("logic error, not nil: 0x%02x" % ord(code))
 
-def _unpack_boolean(code, reader):
+def _unpack_boolean(code, fp):
     if code == b'\xc2':
         return False
     elif code == b'\xc3':
         return True
     raise Exception("logic error, not boolean: 0x%02x" % ord(code))
 
-def _unpack_float(code, reader):
+def _unpack_float(code, fp):
     if code == b'\xca':
-        return struct.unpack(">f", reader.read(4))[0]
+        return struct.unpack(">f", _read_except(fp, 4))[0]
     elif code == b'\xcb':
-        return struct.unpack(">d", reader.read(8))[0]
+        return struct.unpack(">d", _read_except(fp, 8))[0]
     raise Exception("logic error, not float: 0x%02x" % ord(code))
 
-def _unpack_string(code, reader):
+def _unpack_string(code, fp):
     if (ord(code) & 0xe0) == 0xa0:
         length = ord(code) & ~0xe0
     elif code == b'\xd9':
-        length = struct.unpack("B", reader.read(1))[0]
+        length = struct.unpack("B", _read_except(fp, 1))[0]
     elif code == b'\xda':
-        length = struct.unpack(">H", reader.read(2))[0]
+        length = struct.unpack(">H", _read_except(fp, 2))[0]
     elif code == b'\xdb':
-        length = struct.unpack(">I", reader.read(4))[0]
+        length = struct.unpack(">I", _read_except(fp, 4))[0]
     else:
         raise Exception("logic error, not string: 0x%02x" % ord(code))
 
     # Always return raw bytes in compatibility mode
     global compatibility
     if compatibility:
-        return reader.read(length)
+        return _read_except(fp, length)
 
     try:
-        return bytes.decode(reader.read(length), 'utf-8')
+        return bytes.decode(_read_except(fp, length), 'utf-8')
     except UnicodeDecodeError:
         raise InvalidStringException("unpacked string is not utf-8")
 
-def _unpack_binary(code, reader):
+def _unpack_binary(code, fp):
     if code == b'\xc4':
-        length = struct.unpack("B", reader.read(1))[0]
+        length = struct.unpack("B", _read_except(fp, 1))[0]
     elif code == b'\xc5':
-        length = struct.unpack(">H", reader.read(2))[0]
+        length = struct.unpack(">H", _read_except(fp, 2))[0]
     elif code == b'\xc6':
-        length = struct.unpack(">I", reader.read(4))[0]
+        length = struct.unpack(">I", _read_except(fp, 4))[0]
     else:
         raise Exception("logic error, not binary: 0x%02x" % ord(code))
 
-    return reader.read(length)
+    return _read_except(fp, length)
 
-def _unpack_ext(code, reader):
+def _unpack_ext(code, fp):
     if code == b'\xd4':
         length = 1
     elif code == b'\xd5':
@@ -578,47 +577,47 @@ def _unpack_ext(code, reader):
     elif code == b'\xd8':
         length = 16
     elif code == b'\xc7':
-        length = struct.unpack("B", reader.read(1))[0]
+        length = struct.unpack("B", _read_except(fp, 1))[0]
     elif code == b'\xc8':
-        length = struct.unpack(">H", reader.read(2))[0]
+        length = struct.unpack(">H", _read_except(fp, 2))[0]
     elif code == b'\xc9':
-        length = struct.unpack(">I", reader.read(4))[0]
+        length = struct.unpack(">I", _read_except(fp, 4))[0]
     else:
         raise Exception("logic error, not ext: 0x%02x" % ord(code))
 
-    return Ext(ord(reader.read(1)), reader.read(length))
+    return Ext(ord(_read_except(fp, 1)), _read_except(fp, length))
 
-def _unpack_array(code, reader):
+def _unpack_array(code, fp):
     if (ord(code) & 0xf0) == 0x90:
         length = (ord(code) & ~0xf0)
     elif code == b'\xdc':
-        length = struct.unpack(">H", reader.read(2))[0]
+        length = struct.unpack(">H", _read_except(fp, 2))[0]
     elif code == b'\xdd':
-        length = struct.unpack(">I", reader.read(4))[0]
+        length = struct.unpack(">I", _read_except(fp, 4))[0]
     else:
         raise Exception("logic error, not array: 0x%02x" % ord(code))
 
-    return [_unpackb(reader) for i in range(length)]
+    return [_unpack(fp) for i in range(length)]
 
 def _deep_list_to_tuple(x):
     if isinstance(x, list):
         return tuple([_deep_list_to_tuple(e) for e in x])
     return x
 
-def _unpack_map(code, reader):
+def _unpack_map(code, fp):
     if (ord(code) & 0xf0) == 0x80:
         length = (ord(code) & ~0xf0)
     elif code == b'\xde':
-        length = struct.unpack(">H", reader.read(2))[0]
+        length = struct.unpack(">H", _read_except(fp, 2))[0]
     elif code == b'\xdf':
-        length = struct.unpack(">I", reader.read(4))[0]
+        length = struct.unpack(">I", _read_except(fp, 4))[0]
     else:
         raise Exception("logic error, not map: 0x%02x" % ord(code))
 
     d = {}
     for i in range(length):
         # Unpack key
-        k = _unpackb(reader)
+        k = _unpack(fp)
 
         if isinstance(k, list):
             # Attempt to convert list into a hashable tuple
@@ -629,7 +628,7 @@ def _unpack_map(code, reader):
             raise DuplicateKeyException("encountered duplicate key: %s, %s" % (str(k), str(type(k))))
 
         # Unpack value
-        v = _unpackb(reader)
+        v = _unpack(fp)
 
         try:
             d[k] = v
@@ -637,23 +636,73 @@ def _unpack_map(code, reader):
             raise UnhashableKeyException("encountered unhashable key: %s" % str(k))
     return d
 
-def _unpackb(reader):
-    code = reader.read(1)
-    return _unpack_dispatch_table[code](code, reader)
+def _unpack(fp):
+    code = _read_except(fp, 1)
+    return _unpack_dispatch_table[code](code, fp)
 
 ########################################
 
-class _BytesReader(Reader):
-    def __init__(self, s):
-        self.s = s
-        self.index = 0
+def _unpack2(fp):
+    """
+    Deserialize MessagePack bytes into a Python object.
 
-    def read(self, n):
-        if (self.index+n > len(self.s)):
-            raise InsufficientDataException()
-        substring = self.s[ self.index : self.index+n ]
-        self.index += n
-        return substring
+    Args:
+        fp: a .read()-supporting file-like object
+
+    Returns:
+        A deserialized Python object.
+
+    Raises:
+        InsufficientDataException(UnpackException):
+            Insufficient data to unpack the encoded object.
+        InvalidStringException(UnpackException):
+            Invalid UTF-8 string encountered during unpacking.
+        ReservedCodeException(UnpackException):
+            Reserved code encountered during unpacking.
+        UnhashableKeyException(UnpackException):
+            Unhashable key encountered during map unpacking.
+            The serialized map cannot be deserialized into a Python dictionary.
+        DuplicateKeyException(UnpackException):
+            Duplicate key encountered during map unpacking.
+
+    Example:
+    >>> f = open("test.bin")
+    >>> umsgpack.unpackb(f)
+    {u'compact': True, u'schema': 0}
+    >>>
+    """
+    return _unpack(fp)
+
+def _unpack3(fp):
+    """
+    Deserialize MessagePack bytes into a Python object.
+
+    Args:
+        fp: a .read()-supporting file-like object
+
+    Returns:
+        A deserialized Python object.
+
+    Raises:
+        InsufficientDataException(UnpackException):
+            Insufficient data to unpack the encoded object.
+        InvalidStringException(UnpackException):
+            Invalid UTF-8 string encountered during unpacking.
+        ReservedCodeException(UnpackException):
+            Reserved code encountered during unpacking.
+        UnhashableKeyException(UnpackException):
+            Unhashable key encountered during map unpacking.
+            The serialized map cannot be deserialized into a Python dictionary.
+        DuplicateKeyException(UnpackException):
+            Duplicate key encountered during map unpacking.
+
+    Example:
+    >>> f = open("test.bin")
+    >>> umsgpack.unpackb(f)
+    {u'compact': True, u'schema': 0}
+    >>>
+    """
+    return _unpack(fp)
 
 # For Python 2, expects a str object
 def _unpackb2(s):
@@ -688,8 +737,7 @@ def _unpackb2(s):
     """
     if not isinstance(s, str):
         raise TypeError("packed data is not type 'str'")
-    reader = _BytesReader(s)
-    return _unpackb(reader)
+    return _unpack(io.BytesIO(s))
 
 # For Python 3, expects a bytes object
 def _unpackb3(s):
@@ -724,20 +772,22 @@ def _unpackb3(s):
     """
     if not isinstance(s, bytes):
         raise TypeError("packed data is not type 'bytes'")
-    reader = _BytesReader(s)
-    return _unpackb(reader)
+    return _unpack(io.BytesIO(s))
 
 ################################################################################
 ### Module Initialization
 ################################################################################
 
 def __init():
+    global pack
     global packb
+    global unpack
     global unpackb
+    global dump
     global dumps
+    global load
     global loads
     global compatibility
-    global _pack
     global _float_size
     global _unpack_dispatch_table
 
@@ -752,16 +802,22 @@ def __init():
 
     # Map packb and unpackb to the appropriate version
     if sys.version_info[0] == 3:
-        _pack = _pack3
+        pack = _pack3
         packb = _packb3
+        dump = _pack3
         dumps = _packb3
+        unpack = _unpack3
         unpackb = _unpackb3
+        load = _unpack3
         loads = _unpackb3
     else:
-        _pack = _pack2
+        pack = _pack2
         packb = _packb2
+        dump = _pack2
         dumps = _packb2
+        unpack = _unpack2
         unpackb = _unpackb2
+        load = _unpack2
         loads = _unpackb2
 
     # Build a dispatch table for fast lookup of unpacking function
