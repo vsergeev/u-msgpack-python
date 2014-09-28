@@ -204,128 +204,128 @@ b'\x92\xabsome string\xaasome bytes'
 ### Packing
 ################################################################################
 
-# You may notice struct.pack("B", x) instead of the simpler chr(x) in the code
-# below. This is to allow for seamless Python 2 and 3 compatibility, as chr(x)
-# has a str return type instead of bytes in Python 3, and struct.pack(...) has
-# the right return type in both versions.
+# You may notice struct.pack("B", obj) instead of the simpler chr(obj) in the
+# code below. This is to allow for seamless Python 2 and 3 compatibility, as
+# chr(obj)  has a str return type instead of bytes in Python 3, and
+# struct.pack(...) has the right return type in both versions.
 
-def _pack_integer(x, fp):
-    if x < 0:
-        if x >= -32:
-            fp.write(struct.pack("b", x))
-        elif x >= -2**(8-1):
-            fp.write(b"\xd0" + struct.pack("b", x))
-        elif x >= -2**(16-1):
-            fp.write(b"\xd1" + struct.pack(">h", x))
-        elif x >= -2**(32-1):
-            fp.write(b"\xd2" + struct.pack(">i", x))
-        elif x >= -2**(64-1):
-            fp.write(b"\xd3" + struct.pack(">q", x))
+def _pack_integer(obj, fp):
+    if obj < 0:
+        if obj >= -32:
+            fp.write(struct.pack("b", obj))
+        elif obj >= -2**(8-1):
+            fp.write(b"\xd0" + struct.pack("b", obj))
+        elif obj >= -2**(16-1):
+            fp.write(b"\xd1" + struct.pack(">h", obj))
+        elif obj >= -2**(32-1):
+            fp.write(b"\xd2" + struct.pack(">i", obj))
+        elif obj >= -2**(64-1):
+            fp.write(b"\xd3" + struct.pack(">q", obj))
         else:
             raise UnsupportedTypeException("huge signed int")
     else:
-        if x <= 127:
-            fp.write(struct.pack("B", x))
-        elif x <= 2**8-1:
-            fp.write(b"\xcc" + struct.pack("B", x))
-        elif x <= 2**16-1:
-            fp.write(b"\xcd" + struct.pack(">H", x))
-        elif x <= 2**32-1:
-            fp.write(b"\xce" + struct.pack(">I", x))
-        elif x <= 2**64-1:
-            fp.write(b"\xcf" + struct.pack(">Q", x))
+        if obj <= 127:
+            fp.write(struct.pack("B", obj))
+        elif obj <= 2**8-1:
+            fp.write(b"\xcc" + struct.pack("B", obj))
+        elif obj <= 2**16-1:
+            fp.write(b"\xcd" + struct.pack(">H", obj))
+        elif obj <= 2**32-1:
+            fp.write(b"\xce" + struct.pack(">I", obj))
+        elif obj <= 2**64-1:
+            fp.write(b"\xcf" + struct.pack(">Q", obj))
         else:
             raise UnsupportedTypeException("huge unsigned int")
 
-def _pack_nil(x, fp):
+def _pack_nil(obj, fp):
     fp.write(b"\xc0")
 
-def _pack_boolean(x, fp):
-    fp.write(b"\xc3" if x else b"\xc2")
+def _pack_boolean(obj, fp):
+    fp.write(b"\xc3" if obj else b"\xc2")
 
-def _pack_float(x, fp):
+def _pack_float(obj, fp):
     if _float_size == 64:
-        fp.write(b"\xcb" + struct.pack(">d", x))
+        fp.write(b"\xcb" + struct.pack(">d", obj))
     else:
-        fp.write(b"\xca" + struct.pack(">f", x))
+        fp.write(b"\xca" + struct.pack(">f", obj))
 
-def _pack_string(x, fp):
-    x = x.encode('utf-8')
-    if len(x) <= 31:
-        fp.write(struct.pack("B", 0xa0 | len(x)) + x)
-    elif len(x) <= 2**8-1:
-        fp.write(b"\xd9" + struct.pack("B", len(x)) + x)
-    elif len(x) <= 2**16-1:
-        fp.write(b"\xda" + struct.pack(">H", len(x)) + x)
-    elif len(x) <= 2**32-1:
-        fp.write(b"\xdb" + struct.pack(">I", len(x)) + x)
+def _pack_string(obj, fp):
+    obj = obj.encode('utf-8')
+    if len(obj) <= 31:
+        fp.write(struct.pack("B", 0xa0 | len(obj)) + obj)
+    elif len(obj) <= 2**8-1:
+        fp.write(b"\xd9" + struct.pack("B", len(obj)) + obj)
+    elif len(obj) <= 2**16-1:
+        fp.write(b"\xda" + struct.pack(">H", len(obj)) + obj)
+    elif len(obj) <= 2**32-1:
+        fp.write(b"\xdb" + struct.pack(">I", len(obj)) + obj)
     else:
         raise UnsupportedTypeException("huge string")
 
-def _pack_binary(x, fp):
-    if len(x) <= 2**8-1:
-        fp.write(b"\xc4" + struct.pack("B", len(x)) + x)
-    elif len(x) <= 2**16-1:
-        fp.write(b"\xc5" + struct.pack(">H", len(x)) + x)
-    elif len(x) <= 2**32-1:
-        fp.write(b"\xc6" + struct.pack(">I", len(x)) + x)
+def _pack_binary(obj, fp):
+    if len(obj) <= 2**8-1:
+        fp.write(b"\xc4" + struct.pack("B", len(obj)) + obj)
+    elif len(obj) <= 2**16-1:
+        fp.write(b"\xc5" + struct.pack(">H", len(obj)) + obj)
+    elif len(obj) <= 2**32-1:
+        fp.write(b"\xc6" + struct.pack(">I", len(obj)) + obj)
     else:
         raise UnsupportedTypeException("huge binary string")
 
-def _pack_oldspec_raw(x, fp):
-    if len(x) <= 31:
-        fp.write(struct.pack("B", 0xa0 | len(x)) + x)
-    elif len(x) <= 2**16-1:
-        fp.write(b"\xda" + struct.pack(">H", len(x)) + x)
-    elif len(x) <= 2**32-1:
-        fp.write(b"\xdb" + struct.pack(">I", len(x)) + x)
+def _pack_oldspec_raw(obj, fp):
+    if len(obj) <= 31:
+        fp.write(struct.pack("B", 0xa0 | len(obj)) + obj)
+    elif len(obj) <= 2**16-1:
+        fp.write(b"\xda" + struct.pack(">H", len(obj)) + obj)
+    elif len(obj) <= 2**32-1:
+        fp.write(b"\xdb" + struct.pack(">I", len(obj)) + obj)
     else:
         raise UnsupportedTypeException("huge raw string")
 
-def _pack_ext(x, fp):
-    if len(x.data) == 1:
-        fp.write(b"\xd4" + struct.pack("B", x.type & 0xff) + x.data)
-    elif len(x.data) == 2:
-        fp.write(b"\xd5" + struct.pack("B", x.type & 0xff) + x.data)
-    elif len(x.data) == 4:
-        fp.write(b"\xd6" + struct.pack("B", x.type & 0xff) + x.data)
-    elif len(x.data) == 8:
-        fp.write(b"\xd7" + struct.pack("B", x.type & 0xff) + x.data)
-    elif len(x.data) == 16:
-        fp.write(b"\xd8" + struct.pack("B", x.type & 0xff) + x.data)
-    elif len(x.data) <= 2**8-1:
-        fp.write(b"\xc7" + struct.pack("BB", len(x.data), x.type & 0xff) + x.data)
-    elif len(x.data) <= 2**16-1:
-        fp.write(b"\xc8" + struct.pack(">HB", len(x.data), x.type & 0xff) + x.data)
-    elif len(x.data) <= 2**32-1:
-        fp.write(b"\xc9" + struct.pack(">IB", len(x.data), x.type & 0xff) + x.data)
+def _pack_ext(obj, fp):
+    if len(obj.data) == 1:
+        fp.write(b"\xd4" + struct.pack("B", obj.type & 0xff) + obj.data)
+    elif len(obj.data) == 2:
+        fp.write(b"\xd5" + struct.pack("B", obj.type & 0xff) + obj.data)
+    elif len(obj.data) == 4:
+        fp.write(b"\xd6" + struct.pack("B", obj.type & 0xff) + obj.data)
+    elif len(obj.data) == 8:
+        fp.write(b"\xd7" + struct.pack("B", obj.type & 0xff) + obj.data)
+    elif len(obj.data) == 16:
+        fp.write(b"\xd8" + struct.pack("B", obj.type & 0xff) + obj.data)
+    elif len(obj.data) <= 2**8-1:
+        fp.write(b"\xc7" + struct.pack("BB", len(obj.data), obj.type & 0xff) + obj.data)
+    elif len(obj.data) <= 2**16-1:
+        fp.write(b"\xc8" + struct.pack(">HB", len(obj.data), obj.type & 0xff) + obj.data)
+    elif len(obj.data) <= 2**32-1:
+        fp.write(b"\xc9" + struct.pack(">IB", len(obj.data), obj.type & 0xff) + obj.data)
     else:
         raise UnsupportedTypeException("huge ext data")
 
-def _pack_array(x, fp):
-    if len(x) <= 15:
-        fp.write(struct.pack("B", 0x90 | len(x)))
-    elif len(x) <= 2**16-1:
-        fp.write(b"\xdc" + struct.pack(">H", len(x)))
-    elif len(x) <= 2**32-1:
-        fp.write(b"\xdd" + struct.pack(">I", len(x)))
+def _pack_array(obj, fp):
+    if len(obj) <= 15:
+        fp.write(struct.pack("B", 0x90 | len(obj)))
+    elif len(obj) <= 2**16-1:
+        fp.write(b"\xdc" + struct.pack(">H", len(obj)))
+    elif len(obj) <= 2**32-1:
+        fp.write(b"\xdd" + struct.pack(">I", len(obj)))
     else:
         raise UnsupportedTypeException("huge array")
 
-    for e in x:
+    for e in obj:
         pack(e, fp)
 
-def _pack_map(x, fp):
-    if len(x) <= 15:
-        fp.write(struct.pack("B", 0x80 | len(x)))
-    elif len(x) <= 2**16-1:
-        fp.write(b"\xde" + struct.pack(">H", len(x)))
-    elif len(x) <= 2**32-1:
-        fp.write(b"\xdf" + struct.pack(">I", len(x)))
+def _pack_map(obj, fp):
+    if len(obj) <= 15:
+        fp.write(struct.pack("B", 0x80 | len(obj)))
+    elif len(obj) <= 2**16-1:
+        fp.write(b"\xde" + struct.pack(">H", len(obj)))
+    elif len(obj) <= 2**32-1:
+        fp.write(b"\xdf" + struct.pack(">I", len(obj)))
     else:
         raise UnsupportedTypeException("huge array")
 
-    for k,v in x.items():
+    for k,v in obj.items():
         pack(k, fp)
         pack(v, fp)
 
@@ -479,10 +479,10 @@ def _packb3(obj):
 ################################################################################
 
 def _read_except(fp, n):
-    x = fp.read(n)
-    if len(x) < n:
+    data = fp.read(n)
+    if len(data) < n:
         raise InsufficientDataException()
-    return x
+    return data
 
 def _unpack_integer(code, fp):
     if (ord(code) & 0xe0) == 0xe0:
@@ -599,10 +599,10 @@ def _unpack_array(code, fp):
 
     return [_unpack(fp) for i in range(length)]
 
-def _deep_list_to_tuple(x):
-    if isinstance(x, list):
-        return tuple([_deep_list_to_tuple(e) for e in x])
-    return x
+def _deep_list_to_tuple(obj):
+    if isinstance(obj, list):
+        return tuple([_deep_list_to_tuple(e) for e in obj])
+    return obj
 
 def _unpack_map(code, fp):
     if (ord(code) & 0xf0) == 0x80:
