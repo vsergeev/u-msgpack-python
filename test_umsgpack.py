@@ -5,6 +5,7 @@
 #   $ python2 test_umsgpack.py
 #   $ python3 test_umsgpack.py
 #   $ pypy test_umsgpack.py
+#   $ pypy3 test_umsgpack.py
 #
 
 import umsgpack

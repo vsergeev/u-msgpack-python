@@ -171,7 +171,7 @@ KeyDuplicateException = DuplicateKeyException
 ### Exported Functions and Globals
 ################################################################################
 
-# Exported functions and variables set in __init()
+# Exported functions and variables, set up in __init()
 pack = None
 packb = None
 unpack = None
@@ -206,7 +206,7 @@ b'\x92\xabsome string\xaasome bytes'
 
 # You may notice struct.pack("B", obj) instead of the simpler chr(obj) in the
 # code below. This is to allow for seamless Python 2 and 3 compatibility, as
-# chr(obj)  has a str return type instead of bytes in Python 3, and
+# chr(obj) has a str return type instead of bytes in Python 3, and
 # struct.pack(...) has the right return type in both versions.
 
 def _pack_integer(obj, fp):
@@ -436,7 +436,7 @@ def _packb2(obj):
         obj: a Python object
 
     Returns:
-        A 'str' containing the serialized bytes.
+        A 'str' containing serialized MessagePack bytes.
 
     Raises:
         UnsupportedType(PackException):
@@ -459,7 +459,7 @@ def _packb3(obj):
         obj: a Python object
 
     Returns:
-        A 'bytes' containing the serialized bytes.
+        A 'bytes' containing serialized MessagePack bytes.
 
     Raises:
         UnsupportedType(PackException):
@@ -650,7 +650,7 @@ def _unpack2(fp):
         fp: a .read()-supporting file-like object
 
     Returns:
-        A deserialized Python object.
+        A Python object.
 
     Raises:
         InsufficientDataException(UnpackException):
@@ -681,7 +681,7 @@ def _unpack3(fp):
         fp: a .read()-supporting file-like object
 
     Returns:
-        A deserialized Python object.
+        A Python object.
 
     Raises:
         InsufficientDataException(UnpackException):
@@ -699,7 +699,7 @@ def _unpack3(fp):
     Example:
     >>> f = open("test.bin")
     >>> umsgpack.unpackb(f)
-    {u'compact': True, u'schema': 0}
+    {'compact': True, 'schema': 0}
     >>>
     """
     return _unpack(fp)
@@ -710,10 +710,10 @@ def _unpackb2(s):
     Deserialize MessagePack bytes into a Python object.
 
     Args:
-        s: a 'str' containing the MessagePack serialized bytes.
+        s: a 'str' containing serialized MessagePack bytes
 
     Returns:
-        A deserialized Python object.
+        A Python object.
 
     Raises:
         TypeError:
@@ -745,10 +745,10 @@ def _unpackb3(s):
     Deserialize MessagePack bytes into a Python object.
 
     Args:
-        s: a 'bytes' containing the MessagePack serialized bytes.
+        s: a 'bytes' containing serialized MessagePack bytes
 
     Returns:
-        A deserialized Python object.
+        A Python object.
 
     Raises:
         TypeError:
