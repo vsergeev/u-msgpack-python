@@ -1,4 +1,4 @@
-# u-msgpack-python v1.8 - vsergeev at gmail
+# u-msgpack-python v2.0 - vsergeev at gmail
 # https://github.com/vsergeev/u-msgpack-python
 #
 # u-msgpack-python is a lightweight MessagePack serializer and deserializer
@@ -31,7 +31,7 @@
 # THE SOFTWARE.
 #
 """
-u-msgpack-python v1.8 - vsergeev at gmail
+u-msgpack-python v2.0 - vsergeev at gmail
 https://github.com/vsergeev/u-msgpack-python
 
 u-msgpack-python is a lightweight MessagePack serializer and deserializer
@@ -44,7 +44,7 @@ types.
 License: MIT
 """
 
-version = (1,8)
+version = (2,0)
 "Module version tuple"
 
 import struct

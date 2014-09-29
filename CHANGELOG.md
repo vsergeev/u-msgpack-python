@@ -1,3 +1,6 @@
+* Version 2.0 - 09/29/2014
+    * Add streaming serialization and deserialization with `pack`/`dump` and `unpack`/`load`, respectively, for file-like objects.
+
 * Version 1.8 - 09/17/2014
     * Add support for unpacking maps with array container keys. Thanks to ralphjzhang for the report and suggestion (https://github.com/vsergeev/u-msgpack-python/issues/10).
 

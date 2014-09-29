@@ -1,4 +1,4 @@
-# u-msgpack-python v1.8
+# u-msgpack-python v2.0
 
 u-msgpack-python is a lightweight [MessagePack](http://msgpack.org/) serializer and deserializer module written in pure Python, compatible with both Python 2 and 3, as well CPython and PyPy implementations of Python. u-msgpack-python is fully compliant with the latest [MessagePack specification](https://github.com/msgpack/msgpack/blob/master/spec.md).
 
@@ -32,6 +32,7 @@ Basic Example:
 {u'compact': True, u'schema': 0}
 >>> 
 ```
+
 A more complicated example:
 ``` python
 >>> umsgpack.packb(
@@ -46,21 +47,23 @@ A more complicated example:
 >>> 
 ```
 
-The more complicated example in Python 3:
+Streaming serialization with file-like objects:
 ``` python
->>> umsgpack.packb(
-        [1, True, False, 0xffffffff, {u"foo": b"\x80\x01\x02",
-         u"bar": [1,2,3, {u"a": [1,2,3,{}]}]}, -1, 2.12345] )
-b'\x97\x01\xc3\xc2\xce\xff\xff\xff\xff\x82\xa3foo\xc4\x03\x80\x01
-\x02\xa3bar\x94\x01\x02\x03\x81\xa1a\x94\x01\x02\x03\x80\xff\xcb@
-\x00\xfc\xd3Z\x85\x87\x94'
->>> umsgpack.unpackb(_)
-[1, True, False, 4294967295, {'foo': b'\x80\x01\x02',
- 'bar': [1, 2, 3, {'a': [1, 2, 3, {}]}]}, -1, 2.12345]
+>>> f = open('test.bin', 'w')
+>>> umsgpack.pack({u"compact": True, u"schema": 0}, f)
+>>> umsgpack.pack([1,2,3], f)
+>>> f.close()
+>>> 
+>>> f = open('test.bin')
+>>> umsgpack.unpack(f)
+{u'compact': True, u'schema': 0}
+>>> umsgpack.unpack(f)
+[1, 2, 3]
+>>> f.close()
 >>> 
 ```
 
-An example of encoding and decoding an application ext type:
+Encoding and decoding an application-defined ext type:
 ``` python
 >>> # Create an Ext object with type 0x05 and data b"\x01\x02\x03"
 ... foo = umsgpack.Ext(0x05, b"\x01\x02\x03")
@@ -76,13 +79,22 @@ b'\x01\x02\x03'
 >>> 
 ```
 
-Python standard library style `loads` and `dumps` functions are also available as aliases:
+Python standard library style names `dump`, `dumps`, `load`, `loads` are also
+available:
 
 ``` python
 >>> import umsgpack
 >>> umsgpack.dumps({u"compact": True, u"schema": 0})
 '\x82\xa7compact\xc3\xa6schema\x00'
 >>> umsgpack.loads(_)
+{u'compact': True, u'schema': 0}
+>>> 
+>>> f = open('test.bin', 'w')
+>>> umsgpack.dump({u"compact": True, u"schema": 0}, f)
+>>> f.close()
+>>> 
+>>> f = open('test.bin')
+>>> umsgpack.load(f)
 {u'compact': True, u'schema': 0}
 >>> 
 ```

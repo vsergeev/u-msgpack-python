@@ -1,6 +1,6 @@
-# u-msgpack-python v1.8
+# u-msgpack-python v2.0
 
-u-msgpack-python is a lightweight [MessagePack](http://msgpack.org/) serializer and deserializer module written in pure Python, compatible with both Python 2 and 3, as well CPython and PyPy implementations of Python. u-msgpack-python is fully compliant with the latest [MessagePack specification](https://github.com/msgpack/msgpack/blob/master/spec.md). In particular, it supports the new binary, UTF-8 string, and application ext types.
+u-msgpack-python is a lightweight [MessagePack](http://msgpack.org/) serializer and deserializer module written in pure Python, compatible with both Python 2 and 3, as well CPython and PyPy implementations of Python. u-msgpack-python is fully compliant with the latest [MessagePack specification](https://github.com/msgpack/msgpack/blob/master/spec.md). In particular, it supports the new binary, UTF-8 string, and application-defined ext types.
 
 u-msgpack-python is currently distributed on PyPI: https://pypi.python.org/pypi/u-msgpack-python and as a single file: [umsgpack.py](https://raw.github.com/vsergeev/u-msgpack-python/master/umsgpack.py)
 
@@ -46,20 +46,23 @@ A more complicated example:
 >>> 
 ```
 
-The more complicated example in Python 3:
+Streaming serialization with file-like objects:
 ``` python
->>> umsgpack.packb( [1, True, False, 0xffffffff, {u"foo": b"\x80\x01\x02",
-                     u"bar": [1,2,3, {u"a": [1,2,3,{}]}]}, -1, 2.12345] )
-b'\x97\x01\xc3\xc2\xce\xff\xff\xff\xff\x82\xa3foo\xc4\x03\x80\x01
-\x02\xa3bar\x94\x01\x02\x03\x81\xa1a\x94\x01\x02\x03\x80\xff\xcb@
-\x00\xfc\xd3Z\x85\x87\x94'
->>> umsgpack.unpackb(_)
-[1, True, False, 4294967295, {'foo': b'\x80\x01\x02',
- 'bar': [1, 2, 3, {'a': [1, 2, 3, {}]}]}, -1, 2.12345]
+>>> f = open('test.bin', 'w')
+>>> umsgpack.pack({u"compact": True, u"schema": 0}, f)
+>>> umsgpack.pack([1,2,3], f)
+>>> f.close()
+>>> 
+>>> f = open('test.bin')
+>>> umsgpack.unpack(f)
+{u'compact': True, u'schema': 0}
+>>> umsgpack.unpack(f)
+[1, 2, 3]
+>>> f.close()
 >>> 
 ```
 
-An example of encoding and decoding an application ext type:
+Encoding and decoding an application-defined ext type:
 ``` python
 # Create an Ext object with type 0x05 and data b"\x01\x02\x03"
 >>> foo = umsgpack.Ext(0x05, b"\x01\x02\x03")
@@ -75,7 +78,7 @@ b'\x01\x02\x03'
 >>> 
 ```
 
-Python standard library style `loads` and `dumps` functions are also available as aliases:
+Python standard library style names `dump`, `dumps`, `load`, `loads` are also available:
 
 ``` python
 >>> import umsgpack
@@ -83,6 +86,45 @@ Python standard library style `loads` and `dumps` functions are also available a
 '\x82\xa7compact\xc3\xa6schema\x00'
 >>> umsgpack.loads(_)
 {u'compact': True, u'schema': 0}
+>>> 
+>>> f = open('test.bin', 'w')
+>>> umsgpack.dump({u"compact": True, u"schema": 0}, f)
+>>> f.close()
+>>> 
+>>> f = open('test.bin')
+>>> umsgpack.load(f)
+{u'compact': True, u'schema': 0}
+>>> 
+```
+
+## Streaming Serialization and Deserialization
+
+The streaming `pack()`/`dump()` and `unpack()`/`load()` functions allow packing and unpacking objects directly to and from a stream, respectively. Streaming may be necessary when unpacking serialized bytes whose size is unknown in advance, or it may be more convenient and efficient when working directly with stream objects (e.g. files or stream sockets).
+
+`pack(obj, fp)` / `dump(obj, fp)` serialize Python object `obj` to a `.write()` supporting file-like object `fp`.
+
+``` python
+>>> class Foo:
+...     def write(self, data):
+...         # write 'data' bytes
+...         pass
+... 
+>>> f = Foo()
+>>> umsgpack.pack({u"compact": True, u"schema": 0}, f)
+>>> 
+```
+
+`unpack(fp)` / `load(fp)` deserialize a Python object from a `.read()` supporting file-like object `fp`.
+
+``` python
+>>> class Bar:
+...     def read(self, n):
+...         # read and return 'n' number of bytes
+...         return "\x01"*n
+... 
+>>> f = Bar()
+>>> umsgpack.unpack(f)
+1
 >>> 
 ```
 
@@ -104,7 +146,7 @@ b'\x92\xabsome string\xaasome bytes'
 
 ### Packing Exceptions
 
-If an error occurs during packing, `umsgpack.packb()` will raise an exception derived from `umsgpack.PackException`. All possible packing exceptions are described below.
+If an error occurs during packing, umsgpack will raise an exception derived from `umsgpack.PackException`. All possible packing exceptions are described below.
 
 * `UnsupportedTypeException`: Object type not supported for packing.
 
@@ -124,7 +166,7 @@ If an error occurs during packing, `umsgpack.packb()` will raise an exception de
 
 ### Unpacking Exceptions
 
-If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a `TypeError` exception. If an error occurs during unpacking, `umsgpack.unpackb()` will raise an exception derived from `umsgpack.UnpackException`. All possible unpacking exceptions are described below.
+If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a `TypeError` exception. If an error occurs during unpacking, umsgpack will raise an exception derived from `umsgpack.UnpackException`. All possible unpacking exceptions are described below.
 
 * `TypeError`: Packed data is not type `str` (Python 2), or not type `bytes` (Python 3).
 
