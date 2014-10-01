@@ -120,7 +120,7 @@ The streaming `pack()`/`dump()` and `unpack()`/`load()` functions allow packing 
 >>> class Bar:
 ...     def read(self, n):
 ...         # read and return 'n' number of bytes
-...         return "\x01"*n
+...         return b"\x01"*n
 ... 
 >>> f = Bar()
 >>> umsgpack.unpack(f)
@@ -205,7 +205,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
     String bytes are strictly decoded with UTF-8. This exception is thrown if UTF-8 decoding of string bytes fails.
 
     ``` python
-    # Attempt to unpack the string "\x80\x81"
+    # Attempt to unpack the string b"\x80\x81"
     >>> umsgpack.unpackb(b"\xa2\x80\x81")
     ...
     umsgpack.InvalidStringException: unpacked string is not utf-8
