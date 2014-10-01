@@ -3,7 +3,7 @@ from distutils.core import setup
 setup(
     name='u-msgpack-python',
     version='2.0',
-    description='A portable, lightweight msgpack serializer and deserializer written in pure Python.',
+    description='A portable, lightweight MessagePack serializer and deserializer written in pure Python.',
     author='vsergeev',
     author_email='vsergeev at gmail',
     url='https://github.com/vsergeev/u-msgpack-python',
