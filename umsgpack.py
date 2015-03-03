@@ -44,6 +44,9 @@ types.
 License: MIT
 """
 
+__version__ = "2.0"
+"Module version string"
+
 version = (2,0)
 "Module version tuple"
 
