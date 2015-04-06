@@ -600,7 +600,7 @@ def _unpack_array(code, fp):
     else:
         raise Exception("logic error, not array: 0x%02x" % ord(code))
 
-    return [_unpack(fp) for i in range(length)]
+    return [_unpack(fp) for i in xrange(length)]
 
 def _deep_list_to_tuple(obj):
     if isinstance(obj, list):
@@ -618,7 +618,7 @@ def _unpack_map(code, fp):
         raise Exception("logic error, not map: 0x%02x" % ord(code))
 
     d = {}
-    for i in range(length):
+    for i in xrange(length):
         # Unpack key
         k = _unpack(fp)
 
@@ -793,6 +793,7 @@ def __init():
     global compatibility
     global _float_size
     global _unpack_dispatch_table
+    global xrange
 
     # Compatibility mode for handling strings/bytes with the old specification
     compatibility = False
@@ -813,6 +814,7 @@ def __init():
         unpackb = _unpackb3
         load = _unpack3
         loads = _unpackb3
+        xrange = range
     else:
         pack = _pack2
         packb = _packb2

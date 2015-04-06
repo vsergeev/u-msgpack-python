@@ -357,7 +357,7 @@ class TestUmsgpack(unittest.TestCase):
         # Get a list of global variables from umsgpack module
         exported_vars = list(filter(lambda x: not x.startswith("_"), dir(umsgpack)))
         # Ignore imports
-        exported_vars = list(filter(lambda x: x != "struct" and x != "collections" and x != "sys" and x != "io", exported_vars))
+        exported_vars = list(filter(lambda x: x != "struct" and x != "collections" and x != "sys" and x != "io" and x != "xrange", exported_vars))
 
         self.assertTrue(len(exported_vars) == len(exported_vars_test_vector))
         for var in exported_vars_test_vector:
