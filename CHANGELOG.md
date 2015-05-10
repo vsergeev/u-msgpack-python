@@ -1,3 +1,7 @@
+* Version 2.1 - 05/09/2015
+    * Improve array and map unpacking performance under Python 2.
+    * Add module `__version__` attribute.
+
 * Version 2.0 - 09/29/2014
     * Add streaming serialization and deserialization with `pack`/`dump` and `unpack`/`load`, respectively, for file-like objects.
 
