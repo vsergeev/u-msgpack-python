@@ -401,7 +401,7 @@ def _pack3(obj, fp):
 
     Example:
     >>> f = open('test.bin', 'w')
-    >>> umsgpack.pack({u"compact": True, u"schema": 0}, fp)
+    >>> umsgpack.pack({u"compact": True, u"schema": 0}, f)
     >>>
     """
     global compatibility
