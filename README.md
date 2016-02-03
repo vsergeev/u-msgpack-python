@@ -48,12 +48,12 @@ A more complicated example:
 
 Streaming serialization with file-like objects:
 ``` python
->>> f = open('test.bin', 'w')
+>>> f = open('test.bin', 'wb')
 >>> umsgpack.pack({u"compact": True, u"schema": 0}, f)
 >>> umsgpack.pack([1,2,3], f)
 >>> f.close()
 >>> 
->>> f = open('test.bin')
+>>> f = open('test.bin', 'rb')
 >>> umsgpack.unpack(f)
 {u'compact': True, u'schema': 0}
 >>> umsgpack.unpack(f)
@@ -87,11 +87,11 @@ Python standard library style names `dump`, `dumps`, `load`, `loads` are also av
 >>> umsgpack.loads(_)
 {u'compact': True, u'schema': 0}
 >>> 
->>> f = open('test.bin', 'w')
+>>> f = open('test.bin', 'wb')
 >>> umsgpack.dump({u"compact": True, u"schema": 0}, f)
 >>> f.close()
 >>> 
->>> f = open('test.bin')
+>>> f = open('test.bin', 'rb')
 >>> umsgpack.load(f)
 {u'compact': True, u'schema': 0}
 >>> 
