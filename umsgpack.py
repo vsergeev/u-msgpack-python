@@ -351,7 +351,7 @@ def _pack2(obj, fp):
             Object type not supported for packing.
 
     Example:
-    >>> f = open('test.bin', 'w')
+    >>> f = open('test.bin', 'wb')
     >>> umsgpack.pack({u"compact": True, u"schema": 0}, f)
     >>>
     """
@@ -400,7 +400,7 @@ def _pack3(obj, fp):
             Object type not supported for packing.
 
     Example:
-    >>> f = open('test.bin', 'w')
+    >>> f = open('test.bin', 'wb')
     >>> umsgpack.pack({u"compact": True, u"schema": 0}, f)
     >>>
     """
@@ -669,7 +669,7 @@ def _unpack2(fp):
             Duplicate key encountered during map unpacking.
 
     Example:
-    >>> f = open("test.bin")
+    >>> f = open('test.bin', 'rb')
     >>> umsgpack.unpackb(f)
     {u'compact': True, u'schema': 0}
     >>>
@@ -700,7 +700,7 @@ def _unpack3(fp):
             Duplicate key encountered during map unpacking.
 
     Example:
-    >>> f = open("test.bin")
+    >>> f = open('test.bin', 'rb')
     >>> umsgpack.unpackb(f)
     {'compact': True, 'schema': 0}
     >>>
