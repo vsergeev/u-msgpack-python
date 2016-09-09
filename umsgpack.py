@@ -736,6 +736,8 @@ def _unpackb2(s):
     Example:
     >>> umsgpack.unpackb(b'\x82\xa7compact\xc3\xa6schema\x00')
     {u'compact': True, u'schema': 0}
+    >>> umsgpack.unpackb(bytearray(b'\x82\xa7compact\xc3\xa6schema\x00'))
+    {u'compact': True, u'schema': 0}
     >>>
     """
     if not isinstance(s, (str, bytearray)):
