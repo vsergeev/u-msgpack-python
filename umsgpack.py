@@ -713,14 +713,14 @@ def _unpackb2(s):
     Deserialize MessagePack bytes into a Python object.
 
     Args:
-        s: a 'str' containing serialized MessagePack bytes
+        s: a 'str' or 'bytearray' containing serialized MessagePack bytes
 
     Returns:
         A Python object.
 
     Raises:
         TypeError:
-            Packed data is not type 'str'.
+            Packed data is neither a 'str' nor a 'bytearray'.
         InsufficientDataException(UnpackException):
             Insufficient data to unpack the encoded object.
         InvalidStringException(UnpackException):
@@ -738,8 +738,8 @@ def _unpackb2(s):
     {u'compact': True, u'schema': 0}
     >>>
     """
-    if not isinstance(s, str):
-        raise TypeError("packed data is not type 'str'")
+    if not isinstance(s, (str, bytearray)):
+        raise TypeError("packed data must be type 'str' or 'bytearray'")
     return _unpack(io.BytesIO(s))
 
 # For Python 3, expects a bytes object
