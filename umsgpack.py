@@ -736,8 +736,6 @@ def _unpackb2(s):
     Example:
     >>> umsgpack.unpackb(b'\x82\xa7compact\xc3\xa6schema\x00')
     {u'compact': True, u'schema': 0}
-    >>> umsgpack.unpackb(bytearray(b'\x82\xa7compact\xc3\xa6schema\x00'))
-    {u'compact': True, u'schema': 0}
     >>>
     """
     if not isinstance(s, (str, bytearray)):
@@ -750,14 +748,14 @@ def _unpackb3(s):
     Deserialize MessagePack bytes into a Python object.
 
     Args:
-        s: a 'bytes' containing serialized MessagePack bytes
+        s: a 'bytes' or 'bytearray' containing serialized MessagePack bytes
 
     Returns:
         A Python object.
 
     Raises:
         TypeError:
-            Packed data is not type 'bytes'.
+            Packed data type is neither 'bytes' nor 'bytearray'.
         InsufficientDataException(UnpackException):
             Insufficient data to unpack the encoded object.
         InvalidStringException(UnpackException):
@@ -775,8 +773,8 @@ def _unpackb3(s):
     {'compact': True, 'schema': 0}
     >>>
     """
-    if not isinstance(s, bytes):
-        raise TypeError("packed data is not type 'bytes'")
+    if not isinstance(s, (bytes, bytearray)):
+        raise TypeError("packed data must be type 'bytes' or 'bytearray'")
     return _unpack(io.BytesIO(s))
 
 ################################################################################
