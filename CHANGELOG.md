@@ -1,3 +1,10 @@
+* Version 2.2 - 09/25/2015
+    * Add `use_ordered_dict` option to unpacking functions for unpacking MessagePack maps into the `collections.OrderedDict` type.
+    * Add support for `bytearray` type to `unpackb`/`loads` functions.
+    * Fix intermittent unit test failures due to non-deterministic packing of dict test vectors.
+    * Fix several docstring examples and typos.
+    * Add license and unit test to source distribution packaging.
+
 * Version 2.1 - 05/09/2015
     * Improve array and map unpacking performance under Python 2.
     * Add module `__version__` attribute.
