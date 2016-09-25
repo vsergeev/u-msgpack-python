@@ -144,7 +144,7 @@ OrderedDict([('compact', True), ('schema', 0)])
 
 ### Compatibility Mode
 
-u-msgpack-python offers a compatibility mode for the [old specification](https://github.com/msgpack/msgpack/blob/master/spec-old.md) to handle the old "raw" bytes msgpack type. When the compatibility mode is enabled, u-msgpack-python will serialize both unicode strings and bytes into the old "raw" msgpack type, and deserialize the "raw" msgpack type into bytes. To enable compatibility mode, simply set the `compatibility` boolean of the umsgpack module to `True`.
+The compatibility mode supports the "raw" bytes MessagePack type from the [old specification](https://github.com/msgpack/msgpack/blob/master/spec-old.md). When the module-wide `compatibility` option is enabled, both unicode strings and bytes will be serialized into the "raw" MessagePack type, and the "raw" MessagePack type will be deserialized into bytes.
 
 ``` python
 >>> umsgpack.compatibility = True
@@ -238,7 +238,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 
 * `UnhashableKeyException`: Unhashable key encountered during map unpacking. The packed map cannot be unpacked into a Python dictionary.
 
-    Python dictionaries only support keys that are instances of `collections.Hashable`, so while the map `{ { u'abc': True } : 5 }` has a msgpack encoding, it cannot be unpacked into a valid Python dictionary.
+    Python dictionaries only support keys that are instances of `collections.Hashable`, so while the map `{ { u'abc': True } : 5 }` has a MessagePack encoding, it cannot be unpacked into a valid Python dictionary.
 
     ``` python
     # Attempt to unpack { {} : False }
@@ -250,7 +250,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 
 * `DuplicateKeyException`: Duplicate key encountered during map unpacking.
 
-    Python dictionaries do not support duplicate keys, but msgpack maps may be encoded with duplicate keys.
+    Python dictionaries do not support duplicate keys, but MessagePack maps may be encoded with duplicate keys.
 
     ``` python
     # Attempt to unpack { 1: True, 1: False }
@@ -275,7 +275,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 
 ## Testing
 
-u-msgpack-python's included unit tests may be run with `test_umsgpack.py`, under your favorite interpreter.
+The included unit tests may be run with `test_umsgpack.py`, under your favorite interpreter.
 
 ``` text
 $ python2 test_umsgpack.py

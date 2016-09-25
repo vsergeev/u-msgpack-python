@@ -101,7 +101,7 @@ available:
 
 ## More Information
 
-See the [project page](https://github.com/vsergeev/u-msgpack-python) for more information on old specification compatibility mode, exceptions, behavior, and testing.
+See the [project page](https://github.com/vsergeev/u-msgpack-python) for more information on options, exceptions, behavior, and testing.
 
 ## License
 
