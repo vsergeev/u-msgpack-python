@@ -1,0 +1,2 @@
+include LICENSE
+include test_umsgpack.py
