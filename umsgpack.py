@@ -487,7 +487,7 @@ def _read_except(fp, n):
         raise InsufficientDataException()
     return data
 
-def _unpack_integer(code, fp):
+def _unpack_integer(code, fp, options):
     if (ord(code) & 0xe0) == 0xe0:
         return struct.unpack("b", code)[0]
     elif code == b'\xd0':
@@ -510,31 +510,31 @@ def _unpack_integer(code, fp):
         return struct.unpack(">Q", _read_except(fp, 8))[0]
     raise Exception("logic error, not int: 0x%02x" % ord(code))
 
-def _unpack_reserved(code, fp):
+def _unpack_reserved(code, fp, options):
     if code == b'\xc1':
         raise ReservedCodeException("encountered reserved code: 0x%02x" % ord(code))
     raise Exception("logic error, not reserved code: 0x%02x" % ord(code))
 
-def _unpack_nil(code, fp):
+def _unpack_nil(code, fp, options):
     if code == b'\xc0':
         return None
     raise Exception("logic error, not nil: 0x%02x" % ord(code))
 
-def _unpack_boolean(code, fp):
+def _unpack_boolean(code, fp, options):
     if code == b'\xc2':
         return False
     elif code == b'\xc3':
         return True
     raise Exception("logic error, not boolean: 0x%02x" % ord(code))
 
-def _unpack_float(code, fp):
+def _unpack_float(code, fp, options):
     if code == b'\xca':
         return struct.unpack(">f", _read_except(fp, 4))[0]
     elif code == b'\xcb':
         return struct.unpack(">d", _read_except(fp, 8))[0]
     raise Exception("logic error, not float: 0x%02x" % ord(code))
 
-def _unpack_string(code, fp):
+def _unpack_string(code, fp, options):
     if (ord(code) & 0xe0) == 0xa0:
         length = ord(code) & ~0xe0
     elif code == b'\xd9':
@@ -556,7 +556,7 @@ def _unpack_string(code, fp):
     except UnicodeDecodeError:
         raise InvalidStringException("unpacked string is not utf-8")
 
-def _unpack_binary(code, fp):
+def _unpack_binary(code, fp, options):
     if code == b'\xc4':
         length = struct.unpack("B", _read_except(fp, 1))[0]
     elif code == b'\xc5':
@@ -568,7 +568,7 @@ def _unpack_binary(code, fp):
 
     return _read_except(fp, length)
 
-def _unpack_ext(code, fp):
+def _unpack_ext(code, fp, options):
     if code == b'\xd4':
         length = 1
     elif code == b'\xd5':
@@ -590,7 +590,7 @@ def _unpack_ext(code, fp):
 
     return Ext(ord(_read_except(fp, 1)), _read_except(fp, length))
 
-def _unpack_array(code, fp):
+def _unpack_array(code, fp, options):
     if (ord(code) & 0xf0) == 0x90:
         length = (ord(code) & ~0xf0)
     elif code == b'\xdc':
@@ -600,14 +600,14 @@ def _unpack_array(code, fp):
     else:
         raise Exception("logic error, not array: 0x%02x" % ord(code))
 
-    return [_unpack(fp) for i in xrange(length)]
+    return [_unpack(fp, options) for i in xrange(length)]
 
 def _deep_list_to_tuple(obj):
     if isinstance(obj, list):
         return tuple([_deep_list_to_tuple(e) for e in obj])
     return obj
 
-def _unpack_map(code, fp):
+def _unpack_map(code, fp, options):
     if (ord(code) & 0xf0) == 0x80:
         length = (ord(code) & ~0xf0)
     elif code == b'\xde':
@@ -617,10 +617,10 @@ def _unpack_map(code, fp):
     else:
         raise Exception("logic error, not map: 0x%02x" % ord(code))
 
-    d = {}
-    for i in xrange(length):
+    d = {} if not options.get('use_ordered_dict') else collections.OrderedDict()
+    for _ in xrange(length):
         # Unpack key
-        k = _unpack(fp)
+        k = _unpack(fp, options)
 
         if isinstance(k, list):
             # Attempt to convert list into a hashable tuple
@@ -631,7 +631,7 @@ def _unpack_map(code, fp):
             raise DuplicateKeyException("encountered duplicate key: %s, %s" % (str(k), str(type(k))))
 
         # Unpack value
-        v = _unpack(fp)
+        v = _unpack(fp, options)
 
         try:
             d[k] = v
@@ -639,18 +639,22 @@ def _unpack_map(code, fp):
             raise UnhashableKeyException("encountered unhashable key: %s" % str(k))
     return d
 
-def _unpack(fp):
+def _unpack(fp, options):
     code = _read_except(fp, 1)
-    return _unpack_dispatch_table[code](code, fp)
+    return _unpack_dispatch_table[code](code, fp, options)
 
 ########################################
 
-def _unpack2(fp):
+def _unpack2(fp, **options):
     """
     Deserialize MessagePack bytes into a Python object.
 
     Args:
         fp: a .read()-supporting file-like object
+
+    Kwargs:
+        use_ordered_dict (bool): unpack maps into OrderedDict, instead of
+                                 unordered dict (default False)
 
     Returns:
         A Python object.
@@ -674,14 +678,18 @@ def _unpack2(fp):
     {u'compact': True, u'schema': 0}
     >>>
     """
-    return _unpack(fp)
+    return _unpack(fp, options)
 
-def _unpack3(fp):
+def _unpack3(fp, **options):
     """
     Deserialize MessagePack bytes into a Python object.
 
     Args:
         fp: a .read()-supporting file-like object
+
+    Kwargs:
+        use_ordered_dict (bool): unpack maps into OrderedDict, instead of
+                                 unordered dict (default False)
 
     Returns:
         A Python object.
@@ -705,15 +713,19 @@ def _unpack3(fp):
     {'compact': True, 'schema': 0}
     >>>
     """
-    return _unpack(fp)
+    return _unpack(fp, options)
 
 # For Python 2, expects a str object
-def _unpackb2(s):
+def _unpackb2(s, **options):
     """
     Deserialize MessagePack bytes into a Python object.
 
     Args:
         s: a 'str' or 'bytearray' containing serialized MessagePack bytes
+
+    Kwargs:
+        use_ordered_dict (bool): unpack maps into OrderedDict, instead of
+                                 unordered dict (default False)
 
     Returns:
         A Python object.
@@ -740,16 +752,19 @@ def _unpackb2(s):
     """
     if not isinstance(s, (str, bytearray)):
         raise TypeError("packed data must be type 'str' or 'bytearray'")
-    return _unpack(io.BytesIO(s))
+    return _unpack(io.BytesIO(s), options)
 
 # For Python 3, expects a bytes object
-def _unpackb3(s):
+def _unpackb3(s, **options):
     """
     Deserialize MessagePack bytes into a Python object.
 
     Args:
         s: a 'bytes' or 'bytearray' containing serialized MessagePack bytes
 
+    Kwargs:
+        use_ordered_dict (bool): unpack maps into OrderedDict, instead of
+                                 unordered dict (default False)
     Returns:
         A Python object.
 
@@ -775,7 +790,7 @@ def _unpackb3(s):
     """
     if not isinstance(s, (bytes, bytearray)):
         raise TypeError("packed data must be type 'bytes' or 'bytearray'")
-    return _unpack(io.BytesIO(s))
+    return _unpack(io.BytesIO(s), options)
 
 ################################################################################
 ### Module Initialization

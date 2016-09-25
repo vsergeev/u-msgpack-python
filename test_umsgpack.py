@@ -332,6 +332,23 @@ class TestUmsgpack(unittest.TestCase):
 
         umsgpack.compatibility = False
 
+    def test_unpack_ordered_dict(self):
+        # Use last composite test vector (a map)
+        (_, obj, data) = composite_test_vectors[-1]
+
+        # Unpack with default options (unordered dict)
+        unpacked = umsgpack.unpackb(data)
+        self.assertTrue(isinstance(unpacked, dict))
+
+        # Unpack with unordered dict
+        unpacked = umsgpack.unpackb(data, use_ordered_dict=False)
+        self.assertTrue(isinstance(unpacked, dict))
+
+        # Unpack with ordered dict
+        unpacked = umsgpack.unpackb(data, use_ordered_dict=True)
+        self.assertTrue(isinstance(unpacked, OrderedDict))
+        self.assertEqual(unpacked, obj)
+
     def test_ext_exceptions(self):
         with self.assertRaises(TypeError):
             _ = umsgpack.Ext(-1, b"")
