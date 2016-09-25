@@ -8,11 +8,13 @@
 #   $ pypy3 test_umsgpack.py
 #
 
-import umsgpack
 import sys
 import struct
 import unittest
 import io
+from collections import OrderedDict
+
+import umsgpack
 
 single_test_vectors = [
     # None
@@ -120,19 +122,19 @@ composite_test_vectors = [
     # 32-bit Array
     [ "32-bit array", [ 0x05 ]*65536, b"\xdd\x00\x01\x00\x00" + b"\x05"*65536 ],
     # Fix Map
-    [ "fix map", { 1: True, 2: u"abc", 3: b"\x80" }, b"\x83\x01\xc3\x02\xa3\x61\x62\x63\x03\xc4\x01\x80" ],
+    [ "fix map", OrderedDict([(1, True), (2, u"abc"), (3, b"\x80")]), b"\x83\x01\xc3\x02\xa3\x61\x62\x63\x03\xc4\x01\x80" ],
     [ "fix map", { u"abc" : 5 }, b"\x81\xa3\x61\x62\x63\x05" ],
     [ "fix map", { b"\x80" : 0xffff }, b"\x81\xc4\x01\x80\xcd\xff\xff" ],
     [ "fix map", { True : None }, b"\x81\xc3\xc0" ],
     # 16-bit Map
-    [ "16-bit map", dict([(k, 0x05) for k in range(16)]), b"\xde\x00\x10" + b"".join( [ struct.pack("B", i) + b"\x05" for i in range(16) ] ) ],
-    [ "16-bit map", dict([(k, 0x05) for k in range(6000)]), b"\xde\x17\x70" + b"".join([ struct.pack("B", i) + b"\x05" for i in range(128)]) + b"".join([ b"\xcc" + struct.pack("B", i) + b"\x05" for i in range(128, 256)]) + b"".join([ b"\xcd" + struct.pack(">H", i) + b"\x05" for i in range(256, 6000)]) ],
+    [ "16-bit map", OrderedDict([(k, 0x05) for k in range(16)]), b"\xde\x00\x10" + b"".join( [ struct.pack("B", i) + b"\x05" for i in range(16)])],
+    [ "16-bit map", OrderedDict([(k, 0x05) for k in range(6000)]), b"\xde\x17\x70" + b"".join([ struct.pack("B", i) + b"\x05" for i in range(128)]) + b"".join([ b"\xcc" + struct.pack("B", i) + b"\x05" for i in range(128, 256)]) + b"".join([ b"\xcd" + struct.pack(">H", i) + b"\x05" for i in range(256, 6000)]) ],
     # Complex Array
-    [ "complex array", [ True, 0x01, umsgpack.Ext(0x03, b"foo"), 0xff, { 1: False, 2: u"abc" }, b"\x80", [ 1, 2, 3], u"abc" ], b"\x98\xc3\x01\xc7\x03\x03\x66\x6f\x6f\xcc\xff\x82\x01\xc2\x02\xa3\x61\x62\x63\xc4\x01\x80\x93\x01\x02\x03\xa3\x61\x62\x63" ],
+    [ "complex array", [ True, 0x01, umsgpack.Ext(0x03, b"foo"), 0xff, OrderedDict([(1, False), (2, u"abc")]), b"\x80", [1, 2, 3], u"abc" ], b"\x98\xc3\x01\xc7\x03\x03\x66\x6f\x6f\xcc\xff\x82\x01\xc2\x02\xa3\x61\x62\x63\xc4\x01\x80\x93\x01\x02\x03\xa3\x61\x62\x63" ],
     # Complex Map
-    [ "complex map", { 1 : [{1: 2, 3: 4}, {}], 2: 1, 3: [False, u"def"], 4: {0x100000000: u"a", 0xffffffff: u"b"}}, b"\x84\x01\x92\x82\x01\x02\x03\x04\x80\x02\x01\x03\x92\xc2\xa3\x64\x65\x66\x04\x82\xcf\x00\x00\x00\x01\x00\x00\x00\x00\xa1\x61\xce\xff\xff\xff\xff\xa1\x62" ],
+    [ "complex map", OrderedDict([(1, [OrderedDict([(1, 2), (3, 4)]), {}]), (2, 1), (3, [False, u"def"]), (4, OrderedDict([(0x100000000, u"a"), (0xffffffff, u"b")]))]), b"\x84\x01\x92\x82\x01\x02\x03\x04\x80\x02\x01\x03\x92\xc2\xa3\x64\x65\x66\x04\x82\xcf\x00\x00\x00\x01\x00\x00\x00\x00\xa1\x61\xce\xff\xff\xff\xff\xa1\x62" ],
     # Map with Tuple Keys
-    [ "map with tuple keys", {(u"foo", False, 3) : True, (3e6, -5): u"def"}, b"\x82\x92\xcb\x41\x46\xe3\x60\x00\x00\x00\x00\xfb\xa3\x64\x65\x66\x93\xa3\x66\x6f\x6f\xc2\x03\xc3" ],
+    [ "map with tuple keys", OrderedDict([((u"foo", False, 3), True), ((3e6, -5), u"def")]), b"\x82\x93\xa3\x66\x6f\x6f\xc2\x03\xc3\x92\xcb\x41\x46\xe3\x60\x00\x00\x00\x00\xfb\xa3\x64\x65\x66" ],
     # Map with Complex Tuple Keys
     [ "map with complex tuple keys", {(u"foo", (1,2,3), 3) : -5}, b"\x81\x93\xa3\x66\x6f\x6f\x93\x01\x02\x03\x03\xfb" ]
 ]
