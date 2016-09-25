@@ -43,9 +43,9 @@ single_test_vectors = [
     [ "32-bit uint", 0x200000, b"\xce\x00\x20\x00\x00" ],
     [ "32-bit uint", 0xffffffff, b"\xce\xff\xff\xff\xff" ],
     # 64-bit uint
-    [ "64-bit uint", 0x100000000, b"\xcf" + b"\x00\x00\x00\x01" + b"\x00\x00\x00\x00" ],
-    [ "64-bit uint", 0x200000000000, b"\xcf" + b"\x00\x00\x20\x00" + b"\x00\x00\x00\x00" ],
-    [ "64-bit uint", 0xffffffffffffffff, b"\xcf" + b"\xff\xff\xff\xff" + b"\xff\xff\xff\xff" ],
+    [ "64-bit uint", 0x100000000, b"\xcf\x00\x00\x00\x01\x00\x00\x00\x00" ],
+    [ "64-bit uint", 0x200000000000, b"\xcf\x00\x00\x20\x00\x00\x00\x00\x00" ],
+    [ "64-bit uint", 0xffffffffffffffff, b"\xcf\xff\xff\xff\xff\xff\xff\xff\xff" ],
     # 8-bit int
     [ "8-bit int", -33, b"\xd0\xdf" ],
     [ "8-bit int", -100, b"\xd0\x9c" ],
@@ -59,38 +59,38 @@ single_test_vectors = [
     [ "32-bit int", -1000000000, b"\xd2\xc4\x65\x36\x00" ],
     [ "32-bit int", -2147483648, b"\xd2\x80\x00\x00\x00" ],
     # 64-bit int
-    [ "64-bit int", -2147483649, b"\xd3" + b"\xff\xff\xff\xff" + b"\x7f\xff\xff\xff" ],
-    [ "64-bit int", -1000000000000000002, b"\xd3" + b"\xf2\x1f\x49\x4c" + b"\x58\x9b\xff\xfe" ],
-    [ "64-bit int", -9223372036854775808, b"\xd3" + b"\x80\x00\x00\x00" + b"\x00\x00\x00\x00" ],
+    [ "64-bit int", -2147483649, b"\xd3\xff\xff\xff\xff\x7f\xff\xff\xff" ],
+    [ "64-bit int", -1000000000000000002, b"\xd3\xf2\x1f\x49\x4c\x58\x9b\xff\xfe" ],
+    [ "64-bit int", -9223372036854775808, b"\xd3\x80\x00\x00\x00\x00\x00\x00\x00" ],
     # 64-bit float
-    [ "64-bit float", 0.0, b"\xcb" + b"\x00\x00\x00\x00" + b"\x00\x00\x00\x00" ],
-    [ "64-bit float", 2.5, b"\xcb" + b"\x40\x04\x00\x00" + b"\x00\x00\x00\x00" ],
-    [ "64-bit float", float(10**35), b"\xcb" + b"\x47\x33\x42\x61" + b"\x72\xc7\x4d\x82" ],
+    [ "64-bit float", 0.0, b"\xcb\x00\x00\x00\x00\x00\x00\x00\x00" ],
+    [ "64-bit float", 2.5, b"\xcb\x40\x04\x00\x00\x00\x00\x00\x00" ],
+    [ "64-bit float", float(10**35), b"\xcb\x47\x33\x42\x61\x72\xc7\x4d\x82" ],
     # Fixstr String
     [ "fix string", u"", b"\xa0" ],
     [ "fix string", u"a", b"\xa1\x61" ],
     [ "fix string", u"abc", b"\xa3\x61\x62\x63" ],
-    [ "fix string", u"a" * 31, b"\xbf" + b"\x61"*31 ],
+    [ "fix string", u"a"*31, b"\xbf" + b"\x61"*31 ],
     # 8-bit String
-    [ "8-bit string", u"b" * 32, b"\xd9\x20" + b"b" * 32 ],
-    [ "8-bit string", u"c" * 100, b"\xd9\x64" + b"c" * 100 ],
-    [ "8-bit string", u"d" * 255, b"\xd9\xff" + b"d" * 255 ],
+    [ "8-bit string", u"b"*32, b"\xd9\x20" + b"b"*32 ],
+    [ "8-bit string", u"c"*100, b"\xd9\x64" + b"c"*100 ],
+    [ "8-bit string", u"d"*255, b"\xd9\xff" + b"d"*255 ],
     # 16-bit String
-    [ "16-bit string", u"b" * 256, b"\xda\x01\x00" + b"b" * 256 ],
-    [ "16-bit string", u"c" * 65535, b"\xda\xff\xff" + b"c" * 65535 ],
+    [ "16-bit string", u"b"*256, b"\xda\x01\x00" + b"b"*256 ],
+    [ "16-bit string", u"c"*65535, b"\xda\xff\xff" + b"c"*65535 ],
     # 32-bit String
-    [ "32-bit string", u"b" * 65536, b"\xdb\x00\x01\x00\x00" + b"b" * 65536 ],
+    [ "32-bit string", u"b"*65536, b"\xdb\x00\x01\x00\x00" + b"b"*65536 ],
     # Wide character String
     [ "wide char string", u"Allagbé", b"\xa8Allagb\xc3\xa9" ],
     [ "wide char string", u"По оживлённым берегам", b"\xd9\x28\xd0\x9f\xd0\xbe\x20\xd0\xbe\xd0\xb6\xd0\xb8\xd0\xb2\xd0\xbb\xd1\x91\xd0\xbd\xd0\xbd\xd1\x8b\xd0\xbc\x20\xd0\xb1\xd0\xb5\xd1\x80\xd0\xb5\xd0\xb3\xd0\xb0\xd0\xbc" ],
     # 8-bit Binary
-    [ "8-bit binary", b"\x80" * 1, b"\xc4\x01" + b"\x80" * 1 ],
-    [ "8-bit binary", b"\x80" * 32, b"\xc4\x20" + b"\x80" * 32 ],
-    [ "8-bit binary", b"\x80" * 255, b"\xc4\xff" + b"\x80" * 255 ],
+    [ "8-bit binary", b"\x80"*1, b"\xc4\x01" + b"\x80"*1 ],
+    [ "8-bit binary", b"\x80"*32, b"\xc4\x20" + b"\x80"*32 ],
+    [ "8-bit binary", b"\x80"*255, b"\xc4\xff" + b"\x80"*255 ],
     # 16-bit Binary
-    [ "16-bit binary", b"\x80" * 256, b"\xc5\x01\x00" + b"\x80" * 256 ],
+    [ "16-bit binary", b"\x80"*256, b"\xc5\x01\x00" + b"\x80"*256 ],
     # 32-bit Binary
-    [ "32-bit binary", b"\x80" * 65536, b"\xc6\x00\x01\x00\x00" + b"\x80" * 65536 ],
+    [ "32-bit binary", b"\x80"*65536, b"\xc6\x00\x01\x00\x00" + b"\x80"*65536 ],
     # Fixext 1
     [ "fixext 1", umsgpack.Ext(0x05, b"\x80"*1), b"\xd4\x05" + b"\x80"*1 ],
     # Fixext 2
@@ -127,8 +127,8 @@ composite_test_vectors = [
     [ "fix map", { b"\x80" : 0xffff }, b"\x81\xc4\x01\x80\xcd\xff\xff" ],
     [ "fix map", { True : None }, b"\x81\xc3\xc0" ],
     # 16-bit Map
-    [ "16-bit map", OrderedDict([(k, 0x05) for k in range(16)]), b"\xde\x00\x10" + b"".join( [ struct.pack("B", i) + b"\x05" for i in range(16)])],
-    [ "16-bit map", OrderedDict([(k, 0x05) for k in range(6000)]), b"\xde\x17\x70" + b"".join([ struct.pack("B", i) + b"\x05" for i in range(128)]) + b"".join([ b"\xcc" + struct.pack("B", i) + b"\x05" for i in range(128, 256)]) + b"".join([ b"\xcd" + struct.pack(">H", i) + b"\x05" for i in range(256, 6000)]) ],
+    [ "16-bit map", OrderedDict([(k, 0x05) for k in range(16)]), b"\xde\x00\x10" + b"".join([struct.pack("B", i) + b"\x05" for i in range(16)])],
+    [ "16-bit map", OrderedDict([(k, 0x05) for k in range(6000)]), b"\xde\x17\x70" + b"".join([struct.pack("B", i) + b"\x05" for i in range(128)]) + b"".join([b"\xcc" + struct.pack("B", i) + b"\x05" for i in range(128, 256)]) + b"".join([b"\xcd" + struct.pack(">H", i) + b"\x05" for i in range(256, 6000)]) ],
     # Complex Array
     [ "complex array", [ True, 0x01, umsgpack.Ext(0x03, b"foo"), 0xff, OrderedDict([(1, False), (2, u"abc")]), b"\x80", [1, 2, 3], u"abc" ], b"\x98\xc3\x01\xc7\x03\x03\x66\x6f\x6f\xcc\xff\x82\x01\xc2\x02\xa3\x61\x62\x63\xc4\x01\x80\x93\x01\x02\x03\xa3\x61\x62\x63" ],
     # Complex Map
@@ -207,18 +207,18 @@ compatibility_test_vectors = [
     [ "fix raw", u"a", b"\xa1\x61" ],
     [ "fix raw", b"abc", b"\xa3\x61\x62\x63" ],
     [ "fix raw", u"abc", b"\xa3\x61\x62\x63" ],
-    [ "fix raw", b"a" * 31, b"\xbf" + b"\x61"*31 ],
-    [ "fix raw", u"a" * 31, b"\xbf" + b"\x61"*31 ],
+    [ "fix raw", b"a"*31, b"\xbf" + b"\x61"*31 ],
+    [ "fix raw", u"a"*31, b"\xbf" + b"\x61"*31 ],
     # 16-bit Raw
-    [ "16-bit raw", u"b" * 32, b"\xda\x00\x20" + b"b" * 32 ],
-    [ "16-bit raw", b"b" * 32, b"\xda\x00\x20" + b"b" * 32 ],
-    [ "16-bit raw", u"b" * 256, b"\xda\x01\x00" + b"b" * 256 ],
-    [ "16-bit raw", b"b" * 256, b"\xda\x01\x00" + b"b" * 256 ],
-    [ "16-bit raw", u"c" * 65535, b"\xda\xff\xff" + b"c" * 65535 ],
-    [ "16-bit raw", b"c" * 65535, b"\xda\xff\xff" + b"c" * 65535 ],
+    [ "16-bit raw", u"b"*32, b"\xda\x00\x20" + b"b"*32 ],
+    [ "16-bit raw", b"b"*32, b"\xda\x00\x20" + b"b"*32 ],
+    [ "16-bit raw", u"b"*256, b"\xda\x01\x00" + b"b"*256 ],
+    [ "16-bit raw", b"b"*256, b"\xda\x01\x00" + b"b"*256 ],
+    [ "16-bit raw", u"c"*65535, b"\xda\xff\xff" + b"c"*65535 ],
+    [ "16-bit raw", b"c"*65535, b"\xda\xff\xff" + b"c"*65535 ],
     # 32-bit Raw
-    [ "32-bit raw", u"b" * 65536, b"\xdb\x00\x01\x00\x00" + b"b" * 65536 ],
-    [ "32-bit raw", b"b" * 65536, b"\xdb\x00\x01\x00\x00" + b"b" * 65536 ],
+    [ "32-bit raw", u"b"*65536, b"\xdb\x00\x01\x00\x00" + b"b"*65536 ],
+    [ "32-bit raw", b"b"*65536, b"\xdb\x00\x01\x00\x00" + b"b"*65536 ],
 ]
 
 # These are the only global variables that should be exported by umsgpack
@@ -344,14 +344,14 @@ class TestUmsgpack(unittest.TestCase):
 
     def test_streaming_writer(self):
         # Try first composite test vector
-        (name, obj, data) = composite_test_vectors[0]
+        (_, obj, data) = composite_test_vectors[0]
         writer = io.BytesIO()
         umsgpack.pack(obj, writer)
         self.assertTrue(writer.getvalue(), data)
 
     def test_streaming_reader(self):
         # Try first composite test vector
-        (name, obj, data) = composite_test_vectors[0]
+        (_, obj, data) = composite_test_vectors[0]
         reader = io.BytesIO(data)
         self.assertEqual(umsgpack.unpack(reader), obj)
 
@@ -367,4 +367,3 @@ class TestUmsgpack(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
