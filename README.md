@@ -128,7 +128,21 @@ The streaming `pack()`/`dump()` and `unpack()`/`load()` functions allow packing 
 >>> 
 ```
 
-## Compatibility Mode
+## Options
+
+### Ordered Dictionaries
+
+The unpacking functions provide a `use_ordered_dict` option to unpack MessagePack maps into the `collections.OrderedDict` type, rather than the unordered `dict` type, to preserve the order of deserialized MessagePack maps.
+
+``` python
+>>> umsgpack.unpackb(b'\x82\xa7compact\xc3\xa6schema\x00')
+{'compact': True, 'schema': 0}
+>>> umsgpack.unpackb(b'\x82\xa7compact\xc3\xa6schema\x00', use_ordered_dict=True)
+OrderedDict([('compact', True), ('schema', 0)])
+>>> 
+```
+
+### Compatibility Mode
 
 u-msgpack-python offers a compatibility mode for the [old specification](https://github.com/msgpack/msgpack/blob/master/spec-old.md) to handle the old "raw" bytes msgpack type. When the compatibility mode is enabled, u-msgpack-python will serialize both unicode strings and bytes into the old "raw" msgpack type, and deserialize the "raw" msgpack type into bytes. To enable compatibility mode, simply set the `compatibility` boolean of the umsgpack module to `True`.
 
