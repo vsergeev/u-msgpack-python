@@ -216,7 +216,7 @@ b'\x92\xabsome string\xaasome bytes'
 # chr(obj) has a str return type instead of bytes in Python 3, and
 # struct.pack(...) has the right return type in both versions.
 
-def _pack_integer(obj, fp):
+def _pack_integer(obj, fp, options):
     if obj < 0:
         if obj >= -32:
             fp.write(struct.pack("b", obj))
@@ -244,19 +244,19 @@ def _pack_integer(obj, fp):
         else:
             raise UnsupportedTypeException("huge unsigned int")
 
-def _pack_nil(obj, fp):
+def _pack_nil(obj, fp, options):
     fp.write(b"\xc0")
 
-def _pack_boolean(obj, fp):
+def _pack_boolean(obj, fp, options):
     fp.write(b"\xc3" if obj else b"\xc2")
 
-def _pack_float(obj, fp):
+def _pack_float(obj, fp, options):
     if _float_size == 64:
         fp.write(b"\xcb" + struct.pack(">d", obj))
     else:
         fp.write(b"\xca" + struct.pack(">f", obj))
 
-def _pack_string(obj, fp):
+def _pack_string(obj, fp, options):
     obj = obj.encode('utf-8')
     if len(obj) <= 31:
         fp.write(struct.pack("B", 0xa0 | len(obj)) + obj)
@@ -269,7 +269,7 @@ def _pack_string(obj, fp):
     else:
         raise UnsupportedTypeException("huge string")
 
-def _pack_binary(obj, fp):
+def _pack_binary(obj, fp, options):
     if len(obj) <= 2**8-1:
         fp.write(b"\xc4" + struct.pack("B", len(obj)) + obj)
     elif len(obj) <= 2**16-1:
@@ -279,7 +279,7 @@ def _pack_binary(obj, fp):
     else:
         raise UnsupportedTypeException("huge binary string")
 
-def _pack_oldspec_raw(obj, fp):
+def _pack_oldspec_raw(obj, fp, options):
     if len(obj) <= 31:
         fp.write(struct.pack("B", 0xa0 | len(obj)) + obj)
     elif len(obj) <= 2**16-1:
@@ -289,7 +289,7 @@ def _pack_oldspec_raw(obj, fp):
     else:
         raise UnsupportedTypeException("huge raw string")
 
-def _pack_ext(obj, fp):
+def _pack_ext(obj, fp, options):
     if len(obj.data) == 1:
         fp.write(b"\xd4" + struct.pack("B", obj.type & 0xff) + obj.data)
     elif len(obj.data) == 2:
@@ -309,7 +309,7 @@ def _pack_ext(obj, fp):
     else:
         raise UnsupportedTypeException("huge ext data")
 
-def _pack_array(obj, fp):
+def _pack_array(obj, fp, options):
     if len(obj) <= 15:
         fp.write(struct.pack("B", 0x90 | len(obj)))
     elif len(obj) <= 2**16-1:
@@ -320,9 +320,9 @@ def _pack_array(obj, fp):
         raise UnsupportedTypeException("huge array")
 
     for e in obj:
-        pack(e, fp)
+        pack(e, fp, **options)
 
-def _pack_map(obj, fp):
+def _pack_map(obj, fp, options):
     if len(obj) <= 15:
         fp.write(struct.pack("B", 0x80 | len(obj)))
     elif len(obj) <= 2**16-1:
@@ -333,19 +333,24 @@ def _pack_map(obj, fp):
         raise UnsupportedTypeException("huge array")
 
     for k,v in obj.items():
-        pack(k, fp)
-        pack(v, fp)
+        pack(k, fp, **options)
+        pack(v, fp, **options)
 
 ########################################
 
 # Pack for Python 2, with 'unicode' type, 'str' type, and 'long' type
-def _pack2(obj, fp):
+def _pack2(obj, fp, **options):
     """
     Serialize a Python object into MessagePack bytes.
 
     Args:
         obj: a Python object
         fp: a .write()-supporting file-like object
+
+    Kwargs:
+        ext_handlers (dict): dictionary of Ext handlers, mapping a custom type
+                             to a callable that packs an instance of the type
+                             into an Ext object
 
     Returns:
         None.
@@ -359,42 +364,57 @@ def _pack2(obj, fp):
     >>> umsgpack.pack({u"compact": True, u"schema": 0}, f)
     >>>
     """
-
     global compatibility
 
+    ext_handlers = options.get("ext_handlers")
+
     if obj is None:
-        _pack_nil(obj, fp)
+        _pack_nil(obj, fp, options)
+    elif ext_handlers and obj.__class__ in ext_handlers:
+        _pack_ext(ext_handlers[obj.__class__](obj), fp, options)
     elif isinstance(obj, bool):
-        _pack_boolean(obj, fp)
+        _pack_boolean(obj, fp, options)
     elif isinstance(obj, int) or isinstance(obj, long):
-        _pack_integer(obj, fp)
+        _pack_integer(obj, fp, options)
     elif isinstance(obj, float):
-        _pack_float(obj, fp)
+        _pack_float(obj, fp, options)
     elif compatibility and isinstance(obj, unicode):
-        _pack_oldspec_raw(bytes(obj), fp)
+        _pack_oldspec_raw(bytes(obj), fp, options)
     elif compatibility and isinstance(obj, bytes):
-        _pack_oldspec_raw(obj, fp)
+        _pack_oldspec_raw(obj, fp, options)
     elif isinstance(obj, unicode):
-        _pack_string(obj, fp)
+        _pack_string(obj, fp, options)
     elif isinstance(obj, str):
-        _pack_binary(obj, fp)
+        _pack_binary(obj, fp, options)
     elif isinstance(obj, list) or isinstance(obj, tuple):
-        _pack_array(obj, fp)
+        _pack_array(obj, fp, options)
     elif isinstance(obj, dict):
-        _pack_map(obj, fp)
+        _pack_map(obj, fp, options)
     elif isinstance(obj, Ext):
-        _pack_ext(obj, fp)
+        _pack_ext(obj, fp, options)
+    elif ext_handlers:
+        # Linear search for superclass
+        t = next((t for t in ext_handlers.keys() if isinstance(obj, t)), None)
+        if t:
+            _pack_ext(ext_handlers[t](obj), fp, options)
+        else:
+            raise UnsupportedTypeException("unsupported type: %s" % str(type(obj)))
     else:
         raise UnsupportedTypeException("unsupported type: %s" % str(type(obj)))
 
 # Pack for Python 3, with unicode 'str' type, 'bytes' type, and no 'long' type
-def _pack3(obj, fp):
+def _pack3(obj, fp, **options):
     """
     Serialize a Python object into MessagePack bytes.
 
     Args:
         obj: a Python object
         fp: a .write()-supporting file-like object
+
+    Kwargs:
+        ext_handlers (dict): dictionary of Ext handlers, mapping a custom type
+                             to a callable that packs an instance of the type
+                             into an Ext object
 
     Returns:
         None.
@@ -410,37 +430,53 @@ def _pack3(obj, fp):
     """
     global compatibility
 
+    ext_handlers = options.get("ext_handlers")
+
     if obj is None:
-        _pack_nil(obj, fp)
+        _pack_nil(obj, fp, options)
+    elif ext_handlers and obj.__class__ in ext_handlers:
+        _pack_ext(ext_handlers[obj.__class__](obj), fp, options)
     elif isinstance(obj, bool):
-        _pack_boolean(obj, fp)
+        _pack_boolean(obj, fp, options)
     elif isinstance(obj, int):
-        _pack_integer(obj, fp)
+        _pack_integer(obj, fp, options)
     elif isinstance(obj, float):
-        _pack_float(obj, fp)
+        _pack_float(obj, fp, options)
     elif compatibility and isinstance(obj, str):
-        _pack_oldspec_raw(obj.encode('utf-8'), fp)
+        _pack_oldspec_raw(obj.encode('utf-8'), fp, options)
     elif compatibility and isinstance(obj, bytes):
-        _pack_oldspec_raw(obj, fp)
+        _pack_oldspec_raw(obj, fp, options)
     elif isinstance(obj, str):
-        _pack_string(obj, fp)
+        _pack_string(obj, fp, options)
     elif isinstance(obj, bytes):
-        _pack_binary(obj, fp)
+        _pack_binary(obj, fp, options)
     elif isinstance(obj, list) or isinstance(obj, tuple):
-        _pack_array(obj, fp)
+        _pack_array(obj, fp, options)
     elif isinstance(obj, dict):
-        _pack_map(obj, fp)
+        _pack_map(obj, fp, options)
     elif isinstance(obj, Ext):
-        _pack_ext(obj, fp)
+        _pack_ext(obj, fp, options)
+    elif ext_handlers:
+        # Linear search for superclass
+        t = next((t for t in ext_handlers.keys() if isinstance(obj, t)), None)
+        if t:
+            _pack_ext(ext_handlers[t](obj), fp, options)
+        else:
+            raise UnsupportedTypeException("unsupported type: %s" % str(type(obj)))
     else:
         raise UnsupportedTypeException("unsupported type: %s" % str(type(obj)))
 
-def _packb2(obj):
+def _packb2(obj, **options):
     """
     Serialize a Python object into MessagePack bytes.
 
     Args:
         obj: a Python object
+
+    Kwargs:
+        ext_handlers (dict): dictionary of Ext handlers, mapping a custom type
+                             to a callable that packs an instance of the type
+                             into an Ext object
 
     Returns:
         A 'str' containing serialized MessagePack bytes.
@@ -455,15 +491,20 @@ def _packb2(obj):
     >>>
     """
     fp = io.BytesIO()
-    _pack2(obj, fp)
+    _pack2(obj, fp, **options)
     return fp.getvalue()
 
-def _packb3(obj):
+def _packb3(obj, **options):
     """
     Serialize a Python object into MessagePack bytes.
 
     Args:
         obj: a Python object
+
+    Kwargs:
+        ext_handlers (dict): dictionary of Ext handlers, mapping a custom type
+                             to a callable that packs an instance of the type
+                             into an Ext object
 
     Returns:
         A 'bytes' containing serialized MessagePack bytes.
@@ -478,7 +519,7 @@ def _packb3(obj):
     >>>
     """
     fp = io.BytesIO()
-    _pack3(obj, fp)
+    _pack3(obj, fp, **options)
     return fp.getvalue()
 
 ################################################################################
