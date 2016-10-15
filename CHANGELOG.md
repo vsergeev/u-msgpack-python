@@ -4,6 +4,10 @@
     * Fix intermittent unit test failures due to non-deterministic packing of dict test vectors.
     * Fix several docstring examples and typos.
     * Add license and unit test to source distribution packaging.
+    * Contributors
+        * Fairiz 'Fi' Azizi - df59af6
+        * INADA Naoki - 23dbf70
+        * Jack O'Connor - 7aa0d19
 
 * Version 2.1 - 05/09/2015
     * Improve array and map unpacking performance under Python 2.
@@ -36,4 +40,5 @@
 
 * Version 1.0 - 09/29/2013
     * Initial release.
-
+    * Contributors
+        * Eugene Ma - 496aaa5
