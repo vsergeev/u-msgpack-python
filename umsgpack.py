@@ -595,7 +595,14 @@ def _unpack_ext(code, fp, options):
     else:
         raise Exception("logic error, not ext: 0x%02x" % ord(code))
 
-    return Ext(ord(_read_except(fp, 1)), _read_except(fp, length))
+    ext = Ext(ord(_read_except(fp, 1)), _read_except(fp, length))
+
+    # Unpack with ext handler, if we have one
+    ext_handlers = options.get("ext_handlers")
+    if ext_handlers and ext.type in ext_handlers:
+        ext = ext_handlers[ext.type](ext)
+
+    return ext
 
 def _unpack_array(code, fp, options):
     if (ord(code) & 0xf0) == 0x90:
@@ -660,6 +667,9 @@ def _unpack2(fp, **options):
         fp: a .read()-supporting file-like object
 
     Kwargs:
+        ext_handlers (dict): dictionary of Ext handlers, mapping integer Ext
+                             type to a callable that unpacks an instance of
+                             Ext into an object
         use_ordered_dict (bool): unpack maps into OrderedDict, instead of
                                  unordered dict (default False)
         allow_invalid_utf8 (bool): unpack invalid strings into instances of
@@ -698,6 +708,9 @@ def _unpack3(fp, **options):
         fp: a .read()-supporting file-like object
 
     Kwargs:
+        ext_handlers (dict): dictionary of Ext handlers, mapping integer Ext
+                             type to a callable that unpacks an instance of
+                             Ext into an object
         use_ordered_dict (bool): unpack maps into OrderedDict, instead of
                                  unordered dict (default False)
         allow_invalid_utf8 (bool): unpack invalid strings into instances of
@@ -737,6 +750,9 @@ def _unpackb2(s, **options):
         s: a 'str' or 'bytearray' containing serialized MessagePack bytes
 
     Kwargs:
+        ext_handlers (dict): dictionary of Ext handlers, mapping integer Ext
+                             type to a callable that unpacks an instance of
+                             Ext into an object
         use_ordered_dict (bool): unpack maps into OrderedDict, instead of
                                  unordered dict (default False)
         allow_invalid_utf8 (bool): unpack invalid strings into instances of
@@ -779,6 +795,9 @@ def _unpackb3(s, **options):
         s: a 'bytes' or 'bytearray' containing serialized MessagePack bytes
 
     Kwargs:
+        ext_handlers (dict): dictionary of Ext handlers, mapping integer Ext
+                             type to a callable that unpacks an instance of
+                             Ext into an object
         use_ordered_dict (bool): unpack maps into OrderedDict, instead of
                                  unordered dict (default False)
         allow_invalid_utf8 (bool): unpack invalid strings into instances of
