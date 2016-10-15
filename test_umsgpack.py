@@ -224,6 +224,7 @@ compatibility_test_vectors = [
 # These are the only global variables that should be exported by umsgpack
 exported_vars_test_vector = [
     "Ext",
+    "InvalidString",
     "PackException",
     "UnpackException",
     "UnsupportedTypeException",
@@ -331,6 +332,14 @@ class TestUmsgpack(unittest.TestCase):
             self.assertEqual(unpacked, _obj)
 
         umsgpack.compatibility = False
+
+    def test_unpack_invalid_string(self):
+        # Use last unpack exception test vector (an invalid string)
+        (_, data, _) = unpack_exception_test_vectors[-1]
+
+        obj = umsgpack.unpackb(data, allow_invalid_utf8=True)
+        self.assertTrue(isinstance(obj, umsgpack.InvalidString))
+        self.assertEqual(obj, b"\x80")
 
     def test_unpack_ordered_dict(self):
         # Use last composite test vector (a map)

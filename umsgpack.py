@@ -129,6 +129,10 @@ class Ext:
         s += ")"
         return s
 
+class InvalidString(bytes):
+    """Subclass of bytes to hold invalid UTF-8 strings."""
+    pass
+
 ################################################################################
 ### Exceptions
 ################################################################################
@@ -551,10 +555,13 @@ def _unpack_string(code, fp, options):
     if compatibility:
         return _read_except(fp, length)
 
+    data = _read_except(fp, length)
     try:
-        return bytes.decode(_read_except(fp, length), 'utf-8')
+        return bytes.decode(data, 'utf-8')
     except UnicodeDecodeError:
-        raise InvalidStringException("unpacked string is not utf-8")
+        if options.get("allow_invalid_utf8"):
+            return InvalidString(data)
+        raise InvalidStringException("unpacked string is invalid utf-8")
 
 def _unpack_binary(code, fp, options):
     if code == b'\xc4':
@@ -655,6 +662,9 @@ def _unpack2(fp, **options):
     Kwargs:
         use_ordered_dict (bool): unpack maps into OrderedDict, instead of
                                  unordered dict (default False)
+        allow_invalid_utf8 (bool): unpack invalid strings into instances of
+                                   InvalidString, for access to the bytes
+                                   (default False)
 
     Returns:
         A Python object.
@@ -690,6 +700,9 @@ def _unpack3(fp, **options):
     Kwargs:
         use_ordered_dict (bool): unpack maps into OrderedDict, instead of
                                  unordered dict (default False)
+        allow_invalid_utf8 (bool): unpack invalid strings into instances of
+                                   InvalidString, for access to the bytes
+                                   (default False)
 
     Returns:
         A Python object.
@@ -726,6 +739,9 @@ def _unpackb2(s, **options):
     Kwargs:
         use_ordered_dict (bool): unpack maps into OrderedDict, instead of
                                  unordered dict (default False)
+        allow_invalid_utf8 (bool): unpack invalid strings into instances of
+                                   InvalidString, for access to the bytes
+                                   (default False)
 
     Returns:
         A Python object.
@@ -765,6 +781,10 @@ def _unpackb3(s, **options):
     Kwargs:
         use_ordered_dict (bool): unpack maps into OrderedDict, instead of
                                  unordered dict (default False)
+        allow_invalid_utf8 (bool): unpack invalid strings into instances of
+                                   InvalidString, for access to the bytes
+                                   (default False)
+
     Returns:
         A Python object.
 

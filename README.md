@@ -142,6 +142,20 @@ OrderedDict([('compact', True), ('schema', 0)])
 >>> 
 ```
 
+### Invalid UTF-8 Strings
+
+The unpacking functions provide an `allow_invalid_utf8` option to unpack MessagePack strings with invalid UTF-8 into the `umsgpack.InvalidString` type, instead of throwing an exception. The `umsgpack.InvalidString` type is a subclass of `bytes`, and can be used like any other `bytes` object.
+
+``` python
+>>> # Attempt to unpack invalid UTF-8 string
+... umsgpack.unpackb(b'\xa4\x80\x01\x02\x03')
+...
+umsgpack.InvalidStringException: unpacked string is invalid utf-8
+>>> umsgpack.unpackb(b'\xa4\x80\x01\x02\x03', allow_invalid_utf8=True)
+b'\x80\x01\x02\x03'
+>>> 
+```
+
 ### Compatibility Mode
 
 The compatibility mode supports the "raw" bytes MessagePack type from the [old specification](https://github.com/msgpack/msgpack/blob/master/spec-old.md). When the module-wide `compatibility` option is enabled, both unicode strings and bytes will be serialized into the "raw" MessagePack type, and the "raw" MessagePack type will be deserialized into bytes.
@@ -216,13 +230,15 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
     ```
 * `InvalidStringException`: Invalid UTF-8 string encountered during unpacking.
 
-    String bytes are strictly decoded with UTF-8. This exception is thrown if UTF-8 decoding of string bytes fails.
+	String bytes are strictly decoded with UTF-8. This exception is thrown if
+	UTF-8 decoding of string bytes fails. Use the `allow_invalid_utf8` option
+	to unpack invalid MessagePack strings into byte strings.
 
     ``` python
-    # Attempt to unpack the string b"\x80\x81"
+    # Attempt to unpack invalid UTF-8 string
     >>> umsgpack.unpackb(b"\xa2\x80\x81")
     ...
-    umsgpack.InvalidStringException: unpacked string is not utf-8
+    umsgpack.InvalidStringException: unpacked string is invalid utf-8
     >>> 
     ```
 
@@ -268,7 +284,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 * Python 3
   * `str` type objects are packed into, and unpacked from, the msgpack `string` format
   * `bytes` type objects are packed into, and unpacked from, the msgpack `binary` format
-* The msgpack string format is strictly decoded with UTF-8 -- an exception is thrown if the string bytes cannot be decoded into a valid UTF-8 string
+* The msgpack string format is strictly decoded with UTF-8 — an exception is thrown if the string bytes cannot be decoded into a valid UTF-8 string, unless the `allow_invalid_utf8` option is enabled
 * The msgpack array format is unpacked into a Python list, unless it is the key of a map, in which case it is unpacked into a Python tuple
 * Python tuples and lists are both packed into the msgpack array format
 * Python float types are packed into the msgpack float32 or float64 format depending on the system's `sys.float_info`
