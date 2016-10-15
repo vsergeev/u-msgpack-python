@@ -12,7 +12,7 @@ import sys
 import struct
 import unittest
 import io
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 
 import umsgpack
 
@@ -221,6 +221,20 @@ compatibility_test_vectors = [
     [ "32-bit raw", b"b"*65536, b"\xdb\x00\x01\x00\x00" + b"b"*65536 ],
 ]
 
+CustomType = namedtuple('CustomType', ['x', 'y', 'z'])
+
+ext_handlers = {
+    complex: lambda obj: umsgpack.Ext(0x20, struct.pack("ff", obj.real, obj.imag)),
+    CustomType: lambda obj: umsgpack.Ext(0x30, umsgpack.packb(list(obj))),
+    0x20: lambda ext: complex(*struct.unpack("ff", ext.data)),
+    0x30: lambda ext: CustomType(*umsgpack.unpackb(ext.data)),
+}
+
+ext_handlers_test_vectors = [
+    [ "complex", complex(1, 2), b"\xd7\x20\x00\x00\x80\x3f\x00\x00\x00\x40" ],
+    [ "custom type", CustomType(b"abc", 123, True), b"\xd7\x30\x93\xc4\x03\x61\x62\x63\x7b\xc3" ],
+]
+
 # These are the only global variables that should be exported by umsgpack
 exported_vars_test_vector = [
     "Ext",
@@ -367,6 +381,18 @@ class TestUmsgpack(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             _ = umsgpack.Ext(0, u"unicode string")
+
+    def test_pack_ext_handler(self):
+        for (name, obj, data) in ext_handlers_test_vectors:
+            obj_repr = repr(obj)
+            print("\tTesting %s: object %s" % (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+            self.assertEqual(umsgpack.packb(obj, ext_handlers=ext_handlers), data)
+
+    def test_unpack_ext_handler(self):
+        for (name, obj, data) in ext_handlers_test_vectors:
+            obj_repr = repr(obj)
+            print("\tTesting %s: object %s" % (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+            self.assertEqual(umsgpack.unpackb(data, ext_handlers=ext_handlers), obj)
 
     def test_streaming_writer(self):
         # Try first composite test vector
