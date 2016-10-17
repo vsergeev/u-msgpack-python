@@ -1,4 +1,4 @@
-* Version 2.2 - 09/25/2015
+* Version 2.2 - 09/25/2016
     * Add `use_ordered_dict` option to unpacking functions for unpacking MessagePack maps into the `collections.OrderedDict` type.
     * Add support for `bytearray` type to `unpackb`/`loads` functions.
     * Fix intermittent unit test failures due to non-deterministic packing of dict test vectors.
