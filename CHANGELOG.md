@@ -1,3 +1,9 @@
+* Version 2.3.0 - 10/19/2016
+    * Add `ext_handlers` option to packing and unpacking functions to support application-defined Ext packing and unpacking hooks.
+    * Add `allow_invalid_utf8` option to unpacking functions to allow unpacking of invalid UTF-8 strings.
+    * Add hexadecimal prefix to data bytes in string representation of Ext objects.
+    * Change version number to semantic versioning.
+
 * Version 2.2 - 09/25/2016
     * Add `use_ordered_dict` option to unpacking functions for unpacking MessagePack maps into the `collections.OrderedDict` type.
     * Add support for `bytearray` type to `unpackb`/`loads` functions.

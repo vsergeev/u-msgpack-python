@@ -1,4 +1,4 @@
-# u-msgpack-python v2.2 - v at sergeev.io
+# u-msgpack-python v2.3.0 - v at sergeev.io
 # https://github.com/vsergeev/u-msgpack-python
 #
 # u-msgpack-python is a lightweight MessagePack serializer and deserializer
@@ -31,7 +31,7 @@
 # THE SOFTWARE.
 #
 """
-u-msgpack-python v2.2 - v at sergeev.io
+u-msgpack-python v2.3.0 - v at sergeev.io
 https://github.com/vsergeev/u-msgpack-python
 
 u-msgpack-python is a lightweight MessagePack serializer and deserializer
@@ -44,10 +44,10 @@ types.
 License: MIT
 """
 
-__version__ = "2.2"
+__version__ = "2.3.0"
 "Module version string"
 
-version = (2,2)
+version = (2,3,0)
 "Module version tuple"
 
 import struct
