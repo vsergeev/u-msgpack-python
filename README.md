@@ -62,15 +62,16 @@ Streaming serialization with file-like objects:
 >>> 
 ```
 
-Encoding and decoding an application-defined ext type:
+Encoding and decoding an application-defined Ext type:
 ``` python
 # Create an Ext object with type 0x05 and data b"\x01\x02\x03"
 >>> foo = umsgpack.Ext(0x05, b"\x01\x02\x03")
 >>> umsgpack.packb({u"special stuff": foo, u"awesome": True})
 b'\x82\xadspecial stuff\xc7\x03\x05\x01\x02\x03\xa7awesome\xc3'
+>>> 
 >>> bar = umsgpack.unpackb(_)
 >>> print(bar["special stuff"])
-Ext Object (Type: 0x05, Data: 01 02 03)
+Ext Object (Type: 0x05, Data: 0x01 0x02 0x03)
 >>> bar["special stuff"].type
 5
 >>> bar["special stuff"].data
@@ -78,8 +79,24 @@ b'\x01\x02\x03'
 >>> 
 ```
 
-Python standard library style names `dump`, `dumps`, `load`, `loads` are also available:
+Encoding and decoding application-defined types with Ext handlers:
+``` python
+>>> umsgpack.packb([complex(1,2), datetime.datetime.now()],
+...  ext_handlers = {
+...   complex: lambda obj: umsgpack.Ext(0x30, struct.pack("ff", obj.real, obj.imag)),
+...   datetime.datetime: lambda obj: umsgpack.Ext(0x40, obj.strftime("%Y%m%dT%H:%M:%S.%f").encode()),
+...  })
+b'\x92\xd70\x00\x00\x80?\x00\x00\x00@\xc7\x18@20161017T00:12:53.719377'
+>>> umsgpack.unpackb(_,
+...  ext_handlers = {
+...   0x30: lambda ext: complex(*struct.unpack("ff", ext.data)),
+...   0x40: lambda ext: datetime.datetime.strptime(ext.data.decode(), "%Y%m%dT%H:%M:%S.%f"),
+...  })
+[(1+2j), datetime.datetime(2016, 10, 17, 0, 12, 53, 719377)]
+>>> 
+```
 
+Python standard library style names `dump`, `dumps`, `load`, `loads` are also available:
 ``` python
 >>> import umsgpack
 >>> umsgpack.dumps({u"compact": True, u"schema": 0})
@@ -95,6 +112,75 @@ Python standard library style names `dump`, `dumps`, `load`, `loads` are also av
 >>> umsgpack.load(f)
 {u'compact': True, u'schema': 0}
 >>> 
+```
+
+## Ext Handlers
+
+The packing functions accept an optional `ext_handlers` dictionary that maps
+custom types to callables that pack the type into an Ext object. The callable
+should accept the custom type object as an argument and return a packed
+`umsgpack.Ext` object.
+
+Example for packing `set`, `complex`, and `datetime.datetime` types into Ext
+objects with type codes 0x20, 0x30, and 0x40, respectively:
+
+``` python
+>>> umsgpack.packb([1, True, {"foo", 2}, complex(3, 4), datetime.datetime.now()],
+...  ext_handlers = {
+...   set: lambda obj: umsgpack.Ext(0x20, umsgpack.packb(list(obj))),
+...   complex: lambda obj: umsgpack.Ext(0x30, struct.pack("ff", obj.real, obj.imag)),
+...   datetime.datetime: lambda obj: umsgpack.Ext(0x40, obj.strftime("%Y%m%dT%H:%M:%S.%f").encode()),
+...  })
+b'\x95\x01\xc3\xc7\x06 \x92\xa3foo\x02\xd70\x00\x00@@\x00\x00\x80@\xc7\x18@20161015T02:28:35.666425'
+>>> 
+```
+
+Similarly, the unpacking functions accept an optional `ext_handlers` dictionary
+that maps Ext type codes to callables that unpack the Ext into a custom object.
+The callable should accept a `umsgpack.Ext` object as an argument and return an
+unpacked custom type object.
+
+Example for unpacking Ext objects with type codes 0x20, 0x30, and 0x40, into
+`set`, `complex`, and `datetime.datetime` typed objects, respectively:
+
+``` python
+>>> umsgpack.unpackb(b'\x95\x01\xc3\xc7\x06 \x92\xa3foo\x02\xd70\x00\x00@@\x00\x00\x80@' \
+...                  b'\xc7\x18@20161015T02:28:35.666425',
+...  ext_handlers = {
+...   0x20: lambda ext: set(umsgpack.unpackb(ext.data)),
+...   0x30: lambda ext: complex(*struct.unpack("ff", ext.data)),
+...   0x40: lambda ext: datetime.datetime.strptime(ext.data.decode(), "%Y%m%dT%H:%M:%S.%f"),
+...  })
+[1, True, {'foo', 2}, (3+4j), datetime.datetime(2016, 10, 15, 2, 28, 35, 666425)]
+>>> 
+```
+
+Example for packing and unpacking a custom class:
+
+``` python
+class Point(object):
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def __str__(self):
+        return "Point({}, {}, {})".format(self.x, self.y, self.z)
+
+    def pack(self):
+        return struct.pack(">iii", self.x, self.y, self.z)
+
+    @staticmethod
+    def unpack(data):
+        return Point(*struct.unpack(">iii", data))
+
+# Pack
+obj = Point(1,2,3)
+data = umsgpack.packb(obj, ext_handlers = {Point: lambda obj: umsgpack.Ext(0x10, obj.pack())})
+
+# Unpack
+obj = umsgpack.unpackb(data, ext_handlers = {0x10: lambda ext: Point.unpack(ext.data)})
+print(obj) # -> Point(1, 2, 3)
 ```
 
 ## Streaming Serialization and Deserialization
@@ -303,4 +389,3 @@ $ pypy3 test_umsgpack.py
 ## License
 
 u-msgpack-python is MIT licensed. See the included `LICENSE` file for more details.
-

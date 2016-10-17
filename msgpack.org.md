@@ -69,13 +69,39 @@ Encoding and decoding an application-defined ext type:
 ... foo = umsgpack.Ext(0x05, b"\x01\x02\x03")
 >>> umsgpack.packb({u"special stuff": foo, u"awesome": True})
 b'\x82\xadspecial stuff\xc7\x03\x05\x01\x02\x03\xa7awesome\xc3'
+>>> 
 >>> bar = umsgpack.unpackb(_)
 >>> print(bar["special stuff"])
-Ext Object (Type: 0x05, Data: 01 02 03)
+Ext Object (Type: 0x05, Data: 0x01 0x02 0x03)
 >>> bar["special stuff"].type
 5
 >>> bar["special stuff"].data
 b'\x01\x02\x03'
+>>> 
+```
+
+Encoding and decoding application-defined types with Ext handlers:
+``` python
+>>> umsgpack.packb([complex(1,2), datetime.datetime.now()],
+...     ext_handlers = {
+...         complex: lambda obj: umsgpack.Ext(0x30,
+...             struct.pack("ff", obj.real, obj.imag)),
+...         datetime.datetime: lambda obj: umsgpack.Ext(0x40,
+...             obj.strftime("%Y%m%dT%H:%M:%S.%f").encode()),
+...     })
+b'\x92\xd70\x00\x00\x80?\x00\x00\x00@\xc7\x18@20161017T00:12:53.7'
+b'19377'
+>>> umsgpack.unpackb(_,
+...     ext_handlers = {
+...         0x30: lambda ext:
+...                 complex(*struct.unpack("ff", ext.data)),
+...         0x40: lambda ext:
+...                 datetime.datetime.strptime(
+...                     ext.data.decode(),
+...                     "%Y%m%dT%H:%M:%S.%f"
+...                 ),
+...     })
+[(1+2j), datetime.datetime(2016, 10, 17, 0, 12, 53, 719377)]
 >>> 
 ```
 
@@ -106,4 +132,3 @@ See the [project page](https://github.com/vsergeev/u-msgpack-python) for more in
 ## License
 
 u-msgpack-python is MIT licensed. See the included `LICENSE` file for more details.
-
