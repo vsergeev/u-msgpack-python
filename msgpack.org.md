@@ -63,7 +63,7 @@ Streaming serialization with file-like objects:
 >>> 
 ```
 
-Encoding and decoding a raw Ext type:
+Serializing and deserializing a raw Ext type:
 ``` python
 >>> # Create an Ext object with type 0x05 and data b"\x01\x02\x03"
 ... foo = umsgpack.Ext(0x05, b"\x01\x02\x03")
@@ -80,7 +80,7 @@ b'\x01\x02\x03'
 >>> 
 ```
 
-Encoding and decoding application-defined types with Ext handlers:
+Serializing and deserializing application-defined types with Ext handlers:
 ``` python
 >>> umsgpack.packb([complex(1,2), datetime.datetime.now()],
 ...     ext_handlers = {

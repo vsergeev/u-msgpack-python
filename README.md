@@ -62,7 +62,7 @@ Streaming serialization with file-like objects:
 >>> 
 ```
 
-Encoding and decoding a raw Ext type:
+Serializing and deserializing a raw Ext type:
 ``` python
 >>> # Create an Ext object with type 0x05 and data b"\x01\x02\x03"
 ... foo = umsgpack.Ext(0x05, b"\x01\x02\x03")
@@ -79,7 +79,7 @@ b'\x01\x02\x03'
 >>> 
 ```
 
-Encoding and decoding application-defined types with Ext handlers:
+Serializing and deserializing application-defined types with Ext handlers:
 ``` python
 >>> umsgpack.packb([complex(1,2), datetime.datetime.now()],
 ...  ext_handlers = {
@@ -339,7 +339,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 
 * `UnhashableKeyException`: Unhashable key encountered during map unpacking. The packed map cannot be unpacked into a Python dictionary.
 
-    Python dictionaries only support keys that are instances of `collections.Hashable`, so while the map `{ { u'abc': True } : 5 }` has a MessagePack encoding, it cannot be unpacked into a valid Python dictionary.
+    Python dictionaries only support keys that are instances of `collections.Hashable`, so while the map `{ { u'abc': True } : 5 }` has a MessagePack serialization, it cannot be unpacked into a valid Python dictionary.
 
     ``` python
     # Attempt to unpack { {} : False }
@@ -351,7 +351,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 
 * `DuplicateKeyException`: Duplicate key encountered during map unpacking.
 
-    Python dictionaries do not support duplicate keys, but MessagePack maps may be encoded with duplicate keys.
+    Python dictionaries do not support duplicate keys, but MessagePack maps may be serialized with duplicate keys.
 
     ``` python
     # Attempt to unpack { 1: True, 1: False }
