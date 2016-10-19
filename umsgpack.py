@@ -146,7 +146,7 @@ class UnsupportedTypeException(PackException):
 
 # Unpacking error
 class InsufficientDataException(UnpackException):
-    "Insufficient data to unpack the encoded object."
+    "Insufficient data to unpack the serialized object."
     pass
 class InvalidStringException(UnpackException):
     "Invalid UTF-8 string encountered during unpacking."
@@ -716,7 +716,7 @@ def _unpack2(fp, **options):
 
     Raises:
         InsufficientDataException(UnpackException):
-            Insufficient data to unpack the encoded object.
+            Insufficient data to unpack the serialized object.
         InvalidStringException(UnpackException):
             Invalid UTF-8 string encountered during unpacking.
         ReservedCodeException(UnpackException):
@@ -757,7 +757,7 @@ def _unpack3(fp, **options):
 
     Raises:
         InsufficientDataException(UnpackException):
-            Insufficient data to unpack the encoded object.
+            Insufficient data to unpack the serialized object.
         InvalidStringException(UnpackException):
             Invalid UTF-8 string encountered during unpacking.
         ReservedCodeException(UnpackException):
@@ -801,7 +801,7 @@ def _unpackb2(s, **options):
         TypeError:
             Packed data type is neither 'str' nor 'bytearray'.
         InsufficientDataException(UnpackException):
-            Insufficient data to unpack the encoded object.
+            Insufficient data to unpack the serialized object.
         InvalidStringException(UnpackException):
             Invalid UTF-8 string encountered during unpacking.
         ReservedCodeException(UnpackException):
@@ -846,7 +846,7 @@ def _unpackb3(s, **options):
         TypeError:
             Packed data type is neither 'bytes' nor 'bytearray'.
         InsufficientDataException(UnpackException):
-            Insufficient data to unpack the encoded object.
+            Insufficient data to unpack the serialized object.
         InvalidStringException(UnpackException):
             Invalid UTF-8 string encountered during unpacking.
         ReservedCodeException(UnpackException):

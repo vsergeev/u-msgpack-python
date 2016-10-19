@@ -297,10 +297,10 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
     >>> 
     ```
 
-* `InsufficientDataException`: Insufficient data to unpack the encoded object.
+* `InsufficientDataException`: Insufficient data to unpack the serialized object.
 
     ``` python
-    # Attempt to unpack a cut-off encoded 32-bit unsigned int
+    # Attempt to unpack a cut-off serialized 32-bit unsigned int
     >>> umsgpack.unpackb(b"\xce\xff\xff\xff")
     ...
     umsgpack.InsufficientDataException
