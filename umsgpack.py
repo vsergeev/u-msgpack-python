@@ -123,6 +123,13 @@ class Ext:
         s += ")"
         return s
 
+    def __hash__(self):
+        """
+        Provide a hash of this Ext object.
+        """
+        return hash((self.type, self.data))
+
+
 class InvalidString(bytes):
     """Subclass of bytes to hold invalid UTF-8 strings."""
     pass
