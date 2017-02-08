@@ -127,7 +127,7 @@ class Ext:
         """
         Allow to hash extensions, thus allowing them as map keys.
         """
-        return self.type.__hash__() + self.data.__hash__()
+        return hash((self.type, self.data))
 
 
 class InvalidString(bytes):
