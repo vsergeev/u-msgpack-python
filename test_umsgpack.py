@@ -289,6 +289,11 @@ compatibility_test_vectors = [
     ["32-bit raw", b"b" * 65536, b"\xdb\x00\x01\x00\x00" + b"b" * 65536],
 ]
 
+float_precision_test_vectors = [
+    ["float precision single", 2.5, b"\xca\x40\x20\x00\x00"],
+    ["float precision double", 2.5, b"\xcb\x40\x04\x00\x00\x00\x00\x00\x00"],
+]
+
 CustomType = namedtuple('CustomType', ['x', 'y', 'z'])
 
 ext_handlers = {
@@ -486,6 +491,15 @@ class TestUmsgpack(unittest.TestCase):
 
             unpacked = umsgpack.unpackb(data, ext_handlers=ext_handlers)
             self.assertEqual(unpacked, obj)
+
+    def test_pack_force_float_precision(self):
+        for ((name, obj, data), precision) in zip(float_precision_test_vectors, ["single", "double"]):
+            obj_repr = repr(obj)
+            print("\tTesting %s: object %s" %
+                  (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+
+            packed = umsgpack.packb(obj, force_float_precision=precision)
+            self.assertEqual(packed, data)
 
     def test_streaming_writer(self):
         # Try first composite test vector

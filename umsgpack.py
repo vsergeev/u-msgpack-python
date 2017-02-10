@@ -271,10 +271,14 @@ def _pack_boolean(obj, fp, options):
 
 
 def _pack_float(obj, fp, options):
-    if _float_size == 64:
+    float_precision = options.get('force_float_precision', _float_precision)
+
+    if float_precision == "double":
         fp.write(b"\xcb" + struct.pack(">d", obj))
-    else:
+    elif float_precision == "single":
         fp.write(b"\xca" + struct.pack(">f", obj))
+    else:
+        raise ValueError("invalid float precision")
 
 
 def _pack_string(obj, fp, options):
@@ -381,6 +385,10 @@ def _pack2(obj, fp, **options):
         ext_handlers (dict): dictionary of Ext handlers, mapping a custom type
                              to a callable that packs an instance of the type
                              into an Ext object
+        force_float_precision (str): "single" to force packing floats as
+                                     IEEE-754 single-precision floats,
+                                     "double" to force packing floats as
+                                     IEEE-754 double-precision floats.
 
     Returns:
         None.
@@ -447,6 +455,10 @@ def _pack3(obj, fp, **options):
         ext_handlers (dict): dictionary of Ext handlers, mapping a custom type
                              to a callable that packs an instance of the type
                              into an Ext object
+        force_float_precision (str): "single" to force packing floats as
+                                     IEEE-754 single-precision floats,
+                                     "double" to force packing floats as
+                                     IEEE-754 double-precision floats.
 
     Returns:
         None.
@@ -512,6 +524,10 @@ def _packb2(obj, **options):
         ext_handlers (dict): dictionary of Ext handlers, mapping a custom type
                              to a callable that packs an instance of the type
                              into an Ext object
+        force_float_precision (str): "single" to force packing floats as
+                                     IEEE-754 single-precision floats,
+                                     "double" to force packing floats as
+                                     IEEE-754 double-precision floats.
 
     Returns:
         A 'str' containing serialized MessagePack bytes.
@@ -541,6 +557,10 @@ def _packb3(obj, **options):
         ext_handlers (dict): dictionary of Ext handlers, mapping a custom type
                              to a callable that packs an instance of the type
                              into an Ext object
+        force_float_precision (str): "single" to force packing floats as
+                                     IEEE-754 single-precision floats,
+                                     "double" to force packing floats as
+                                     IEEE-754 double-precision floats.
 
     Returns:
         A 'bytes' containing serialized MessagePack bytes.
@@ -946,7 +966,7 @@ def __init():
     global load
     global loads
     global compatibility
-    global _float_size
+    global _float_precision
     global _unpack_dispatch_table
     global xrange
 
@@ -955,9 +975,9 @@ def __init():
 
     # Auto-detect system float precision
     if sys.float_info.mant_dig == 53:
-        _float_size = 64
+        _float_precision = "double"
     else:
-        _float_size = 32
+        _float_precision = "single"
 
     # Map packb and unpackb to the appropriate version
     if sys.version_info[0] == 3:

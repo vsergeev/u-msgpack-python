@@ -241,7 +241,21 @@ b'\x80\x01\x02\x03'
 >>> 
 ```
 
-### Compatibility Mode
+### Float Precision
+
+The packing functions provide a `force_float_precision` option to force packing of floats into the specified precision: `"single"` for IEEE-754 single-precision floats, or `"double"` for IEEE-754 double-precision floats.
+
+``` python
+>>> # Force float packing to single-precision floats
+... umsgpack.packb(2.5, force_float_precision="single")
+b'\xca@ \x00\x00'
+>>> # Force float packing to double-precision floats
+... umsgpack.packb(2.5, force_float_precision="double")
+b'\xcb@\x04\x00\x00\x00\x00\x00\x00'
+>>> 
+```
+
+### Old Specification Compatibility Mode
 
 The compatibility mode supports the "raw" bytes MessagePack type from the [old specification](https://github.com/msgpack/msgpack/blob/master/spec-old.md). When the module-wide `compatibility` option is enabled, both unicode strings and bytes will be serialized into the "raw" MessagePack type, and the "raw" MessagePack type will be deserialized into bytes.
 
