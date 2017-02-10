@@ -271,7 +271,7 @@ def _pack_boolean(obj, fp, options):
 
 
 def _pack_float(obj, fp, options):
-    if _float_size == 64:
+    if _float_size == 64 and not options.get('single_float', False):
         fp.write(b"\xcb" + struct.pack(">d", obj))
     else:
         fp.write(b"\xca" + struct.pack(">f", obj))
