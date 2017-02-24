@@ -51,9 +51,15 @@ version = (2,3,0)
 "Module version tuple"
 
 import struct
-import collections
 import sys
 import io
+
+def _ishashable(value):
+    try:
+        hash(value)
+        return True
+    except TypeError:
+        return False
 
 ################################################################################
 ### Ext Class
@@ -674,7 +680,7 @@ def _unpack_map(code, fp, options):
         if isinstance(k, list):
             # Attempt to convert list into a hashable tuple
             k = _deep_list_to_tuple(k)
-        elif not isinstance(k, collections.Hashable):
+        elif not _ishashable(k):
             raise UnhashableKeyException("encountered unhashable key: %s, %s" % (str(k), str(type(k))))
         elif k in d:
             raise DuplicateKeyException("encountered duplicate key: %s, %s" % (str(k), str(type(k))))
@@ -887,10 +893,13 @@ def __init():
     # Compatibility mode for handling strings/bytes with the old specification
     compatibility = False
 
-    # Auto-detect system float precision
-    if sys.float_info.mant_dig == 53:
-        _float_size = 64
-    else:
+    try:
+        # Auto-detect system float precision
+        if sys.float_info.mant_dig == 53:
+            _float_size = 64
+        else:
+            _float_size = 32
+    except AttributeError:  # micropython doesn't have sys.float_info
         _float_size = 32
 
     # Map packb and unpackb to the appropriate version
