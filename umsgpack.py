@@ -271,7 +271,7 @@ def _pack_boolean(obj, fp, options):
 
 
 def _pack_float(obj, fp, options):
-    if _float_size == 64 and not options.get('single_float', False):
+    if _float_size == 64 and not options.get('use_single_float', False):
         fp.write(b"\xcb" + struct.pack(">d", obj))
     else:
         fp.write(b"\xca" + struct.pack(">f", obj))
@@ -381,6 +381,8 @@ def _pack2(obj, fp, **options):
         ext_handlers (dict): dictionary of Ext handlers, mapping a custom type
                              to a callable that packs an instance of the type
                              into an Ext object
+        use_single_float (bool): pack floats as single-precision IEEE754 floats,
+                                 even if the system supports double floats.
 
     Returns:
         None.
@@ -447,6 +449,8 @@ def _pack3(obj, fp, **options):
         ext_handlers (dict): dictionary of Ext handlers, mapping a custom type
                              to a callable that packs an instance of the type
                              into an Ext object
+        use_single_float (bool): pack floats as single-precision IEEE754 floats,
+                                 even if the system supports double floats.
 
     Returns:
         None.
@@ -512,6 +516,8 @@ def _packb2(obj, **options):
         ext_handlers (dict): dictionary of Ext handlers, mapping a custom type
                              to a callable that packs an instance of the type
                              into an Ext object
+        use_single_float (bool): pack floats as single-precision IEEE754 floats,
+                                 even if the system supports double floats.
 
     Returns:
         A 'str' containing serialized MessagePack bytes.
@@ -541,6 +547,8 @@ def _packb3(obj, **options):
         ext_handlers (dict): dictionary of Ext handlers, mapping a custom type
                              to a callable that packs an instance of the type
                              into an Ext object
+        use_single_float (bool): pack floats as single-precision IEEE754 floats,
+                                 even if the system supports double floats.
 
     Returns:
         A 'bytes' containing serialized MessagePack bytes.
