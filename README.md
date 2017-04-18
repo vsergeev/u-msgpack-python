@@ -30,7 +30,7 @@ Basic Example:
 b'\x82\xa7compact\xc3\xa6schema\x00'
 >>> umsgpack.unpackb(_)
 {u'compact': True, u'schema': 0}
->>> 
+>>>
 ```
 
 A more complicated example:
@@ -43,7 +43,7 @@ b'\x97\x01\xc3\xc2\xce\xff\xff\xff\xff\x82\xa3foo\xc4\x03\x80\x01\
 >>> umsgpack.unpackb(_)
 [1, True, False, 4294967295, {u'foo': b'\x80\x01\x02', \
  u'bar': [1, 2, 3, {u'a': [1, 2, 3, {}]}]}, -1, 2.12345]
->>> 
+>>>
 ```
 
 Streaming serialization with file-like objects:
@@ -52,14 +52,14 @@ Streaming serialization with file-like objects:
 >>> umsgpack.pack({u"compact": True, u"schema": 0}, f)
 >>> umsgpack.pack([1,2,3], f)
 >>> f.close()
->>> 
+>>>
 >>> f = open('test.bin', 'rb')
 >>> umsgpack.unpack(f)
 {u'compact': True, u'schema': 0}
 >>> umsgpack.unpack(f)
 [1, 2, 3]
 >>> f.close()
->>> 
+>>>
 ```
 
 Serializing and deserializing a raw Ext type:
@@ -68,7 +68,7 @@ Serializing and deserializing a raw Ext type:
 ... foo = umsgpack.Ext(0x05, b"\x01\x02\x03")
 >>> umsgpack.packb({u"stuff": foo, u"awesome": True})
 b'\x82\xa5stuff\xc7\x03\x05\x01\x02\x03\xa7awesome\xc3'
->>> 
+>>>
 >>> bar = umsgpack.unpackb(_)
 >>> print(bar['stuff'])
 Ext Object (Type: 0x05, Data: 0x01 0x02 0x03)
@@ -76,7 +76,7 @@ Ext Object (Type: 0x05, Data: 0x01 0x02 0x03)
 5
 >>> bar['stuff'].data
 b'\x01\x02\x03'
->>> 
+>>>
 ```
 
 Serializing and deserializing application-defined types with Ext handlers:
@@ -93,7 +93,7 @@ b'\x92\xd70\x00\x00\x80?\x00\x00\x00@\xc7\x18@20161017T00:12:53.719377'
 ...   0x40: lambda ext: datetime.datetime.strptime(ext.data.decode(), "%Y%m%dT%H:%M:%S.%f"),
 ...  })
 [(1+2j), datetime.datetime(2016, 10, 17, 0, 12, 53, 719377)]
->>> 
+>>>
 ```
 
 Python standard library style names `dump`, `dumps`, `load`, `loads` are also available:
@@ -102,15 +102,15 @@ Python standard library style names `dump`, `dumps`, `load`, `loads` are also av
 b'\x82\xa7compact\xc3\xa6schema\x00'
 >>> umsgpack.loads(_)
 {u'compact': True, u'schema': 0}
->>> 
+>>>
 >>> f = open('test.bin', 'wb')
 >>> umsgpack.dump({u"compact": True, u"schema": 0}, f)
 >>> f.close()
->>> 
+>>>
 >>> f = open('test.bin', 'rb')
 >>> umsgpack.load(f)
 {u'compact': True, u'schema': 0}
->>> 
+>>>
 ```
 
 ## Ext Handlers
@@ -131,7 +131,7 @@ objects with type codes 0x20, 0x30, and 0x40, respectively:
 ...   datetime.datetime: lambda obj: umsgpack.Ext(0x40, obj.strftime("%Y%m%dT%H:%M:%S.%f").encode()),
 ...  })
 b'\x95\x01\xc3\xc7\x06 \x92\xa3foo\x02\xd70\x00\x00@@\x00\x00\x80@\xc7\x18@20161015T02:28:35.666425'
->>> 
+>>>
 ```
 
 Similarly, the unpacking functions accept an optional `ext_handlers` dictionary
@@ -151,7 +151,7 @@ Example for unpacking Ext objects with type codes 0x20, 0x30, and 0x40, into
 ...   0x40: lambda ext: datetime.datetime.strptime(ext.data.decode(), "%Y%m%dT%H:%M:%S.%f"),
 ...  })
 [1, True, {'foo', 2}, (3+4j), datetime.datetime(2016, 10, 15, 2, 28, 35, 666425)]
->>> 
+>>>
 ```
 
 Example for packing and unpacking a custom class:
@@ -193,10 +193,10 @@ The streaming `pack()`/`dump()` and `unpack()`/`load()` functions allow packing 
 ...     def write(self, data):
 ...         # write 'data' bytes
 ...         pass
-... 
+...
 >>> f = Foo()
 >>> umsgpack.pack({u"compact": True, u"schema": 0}, f)
->>> 
+>>>
 ```
 
 `unpack(fp)` / `load(fp)` deserialize a Python object from a `.read()` supporting file-like object `fp`.
@@ -206,11 +206,11 @@ The streaming `pack()`/`dump()` and `unpack()`/`load()` functions allow packing 
 ...     def read(self, n):
 ...         # read and return 'n' number of bytes
 ...         return b"\x01"*n
-... 
+...
 >>> f = Bar()
 >>> umsgpack.unpack(f)
 1
->>> 
+>>>
 ```
 
 ## Options
@@ -224,7 +224,7 @@ The unpacking functions provide a `use_ordered_dict` option to unpack MessagePac
 {'compact': True, 'schema': 0}
 >>> umsgpack.unpackb(b'\x82\xa7compact\xc3\xa6schema\x00', use_ordered_dict=True)
 OrderedDict([('compact', True), ('schema', 0)])
->>> 
+>>>
 ```
 
 ### Invalid UTF-8 Strings
@@ -238,7 +238,7 @@ The unpacking functions provide an `allow_invalid_utf8` option to unpack Message
 umsgpack.InvalidStringException: unpacked string is invalid utf-8
 >>> umsgpack.unpackb(b'\xa4\x80\x01\x02\x03', allow_invalid_utf8=True)
 b'\x80\x01\x02\x03'
->>> 
+>>>
 ```
 
 ### Compatibility Mode
@@ -252,7 +252,7 @@ The compatibility mode supports the "raw" bytes MessagePack type from the [old s
 b'\x92\xabsome string\xaasome bytes'
 >>> umsgpack.unpackb(_)
 [b'some string', b'some bytes']
->>> 
+>>>
 ```
 
 ## Exceptions
@@ -268,13 +268,13 @@ If an error occurs during packing, umsgpack will raise an exception derived from
     ... umsgpack.packb(set([1,2,3]))
     ...
     umsgpack.UnsupportedTypeException: unsupported type: <type 'set'>
-    >>> 
+    >>>
 
     >>> # Attempt to pack > 64-bit unsigned int
     ... umsgpack.packb(2**64)
     ...
     umsgpack.UnsupportedTypeException: huge unsigned int
-    >>> 
+    >>>
     ```
 
 ### Unpacking Exceptions
@@ -288,13 +288,13 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
     >>> umsgpack.unpackb(u"no good")
     ...
     TypeError: expected packed data as type 'str'
-    >>> 
+    >>>
 
     # Attempt to unpack non-bytes type data in Python 3
     >>> umsgpack.unpackb("no good")
     ...
     TypeError: expected packed data as type 'bytes'
-    >>> 
+    >>>
     ```
 
 * `InsufficientDataException`: Insufficient data to unpack the serialized object.
@@ -304,13 +304,13 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
     >>> umsgpack.unpackb(b"\xce\xff\xff\xff")
     ...
     umsgpack.InsufficientDataException
-    >>> 
+    >>>
 
     # Attempt to unpack an array of length 2 missing the second item
     >>> umsgpack.unpackb(b"\x92\xc2")
     ...
     umsgpack.InsufficientDataException
-    >>> 
+    >>>
 
     ```
 * `InvalidStringException`: Invalid UTF-8 string encountered during unpacking.
@@ -324,7 +324,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
     >>> umsgpack.unpackb(b"\xa2\x80\x81")
     ...
     umsgpack.InvalidStringException: unpacked string is invalid utf-8
-    >>> 
+    >>>
     ```
 
 * `ReservedCodeException`: Reserved code encountered during unpacking.
@@ -334,7 +334,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
     >>> umsgpack.unpackb(b"\xc1")
     ...
     umsgpack.ReservedCodeException: reserved code encountered: 0xc1
-    >>> 
+    >>>
     ```
 
 * `UnhashableKeyException`: Unhashable key encountered during map unpacking. The packed map cannot be unpacked into a Python dictionary.
@@ -346,7 +346,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
     >>> umsgpack.unpackb(b"\x82\x80\xc2")
     ...
     umsgpack.UnhashableKeyException: encountered unhashable key type: {}, <type 'dict'>
-    >>> 
+    >>>
     ```
 
 * `DuplicateKeyException`: Duplicate key encountered during map unpacking.
@@ -358,7 +358,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
     >>> umsgpack.unpackb(b"\x82\x01\xc3\x01\xc2")
     ...
     umsgpack.DuplicateKeyException: encountered duplicate key: 1, <type 'int'>
-    >>> 
+    >>>
     ```
 
 ## Behavior Notes
@@ -383,6 +383,13 @@ $ python2 test_umsgpack.py
 $ python3 test_umsgpack.py
 $ pypy test_umsgpack.py
 $ pypy3 test_umsgpack.py
+```
+
+Alternatively you can use `tox` or `detox` to test multiple Python versions at once.
+
+``` text
+$ pip install -U detox
+$ detox
 ```
 
 ## License
