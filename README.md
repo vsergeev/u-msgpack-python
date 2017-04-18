@@ -399,6 +399,13 @@ $ pypy test_umsgpack.py
 $ pypy3 test_umsgpack.py
 ```
 
+Alternatively, you can use `tox` or `detox` to test multiple Python versions at once.
+
+``` text
+$ pip install tox
+$ tox
+```
+
 ## License
 
 u-msgpack-python is MIT licensed. See the included `LICENSE` file for more details.
