@@ -1,3 +1,13 @@
+* Version 2.4.0 - 04/20/2017
+    * Add hash special method to Ext class.
+    * Add packing option to force floating point precision.
+    * Make codebase PEP 8 compliant.
+    * Add support for tox automated testing and use it in CI.
+    * Contributors
+        * Fabien Fleutot, @fab13n - 4c461ed, bdeee20
+        * Yuhang (Steven) Wang, @yuhangwang - 5f53bcf
+        * Pedro Rodrigues, @medecau - 2f7b667, 456032c, e60bc5e
+
 * Version 2.3.0 - 10/19/2016
     * Add `ext_handlers` option to packing and unpacking functions to support application-defined Ext packing and unpacking hooks.
     * Add `allow_invalid_utf8` option to unpacking functions to allow unpacking of invalid UTF-8 strings.
