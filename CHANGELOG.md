@@ -1,3 +1,6 @@
+* Version 2.4.1 - 04/25/2017
+    * Fix module version tuple inconsistency.
+
 * Version 2.4.0 - 04/20/2017
     * Add hash special method to Ext class.
     * Add packing option to force floating point precision.

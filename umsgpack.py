@@ -1,4 +1,4 @@
-# u-msgpack-python v2.4.0 - v at sergeev.io
+# u-msgpack-python v2.4.1 - v at sergeev.io
 # https://github.com/vsergeev/u-msgpack-python
 #
 # u-msgpack-python is a lightweight MessagePack serializer and deserializer
@@ -31,7 +31,7 @@
 # THE SOFTWARE.
 #
 """
-u-msgpack-python v2.4.0 - v at sergeev.io
+u-msgpack-python v2.4.1 - v at sergeev.io
 https://github.com/vsergeev/u-msgpack-python
 
 u-msgpack-python is a lightweight MessagePack serializer and deserializer
@@ -48,10 +48,10 @@ import collections
 import sys
 import io
 
-__version__ = "2.4.0"
+__version__ = "2.4.1"
 "Module version string"
 
-version = (2, 3, 0)
+version = (2, 4, 1)
 "Module version tuple"
 
 
