@@ -11,6 +11,7 @@
 import sys
 import struct
 import unittest
+import datetime
 import io
 from collections import OrderedDict, namedtuple
 
@@ -116,6 +117,27 @@ single_test_vectors = [
     ["empty array", [], b"\x90"],
     # Empty Map
     ["empty map", {}, b"\x80"],
+    # 32-bit Timestamp
+    ["32-bit timestamp", datetime.datetime(1970, 1, 1, 0, 0, 0, 0, umsgpack._utc_tzinfo),
+        b"\xd6\xff\x00\x00\x00\x00"],
+    ["32-bit timestamp", datetime.datetime(2000, 1, 1, 10, 5, 2, 0, umsgpack._utc_tzinfo),
+        b"\xd6\xff\x38\x6d\xd1\x4e"],
+    # 64-bit Timestamp
+    ["64-bit timestamp", datetime.datetime(2000, 1, 1, 10, 5, 2, 1234, umsgpack._utc_tzinfo),
+        b"\xd7\xff\x00\x4b\x51\x40\x38\x6d\xd1\x4e"],
+    ["64-bit timestamp", datetime.datetime(2200, 1, 1, 10, 5, 2, 0, umsgpack._utc_tzinfo),
+        b"\xd7\xff\x00\x00\x00\x01\xb0\x9e\xa6\xce"],
+    ["64-bit timestamp", datetime.datetime(2200, 1, 1, 10, 5, 2, 1234, umsgpack._utc_tzinfo),
+        b"\xd7\xff\x00\x4b\x51\x41\xb0\x9e\xa6\xce"],
+    # 96-bit Timestamp
+    ["96-bit timestamp", datetime.datetime(1900, 1, 1, 10, 5, 2, 0, umsgpack._utc_tzinfo),
+        b"\xc7\x0c\xff\x00\x00\x00\x00\xff\xff\xff\xff\x7c\x56\x0f\x4e"],
+    ["96-bit timestamp", datetime.datetime(1900, 1, 1, 10, 5, 2, 1234, umsgpack._utc_tzinfo),
+        b"\xc7\x0c\xff\x00\x12\xd4\x50\xff\xff\xff\xff\x7c\x56\x0f\x4e"],
+    ["96-bit timestamp", datetime.datetime(3000, 1, 1, 10, 5, 2, 0, umsgpack._utc_tzinfo),
+        b"\xc7\x0c\xff\x00\x00\x00\x00\x00\x00\x00\x07\x91\x5f\x59\xce"],
+    ["96-bit timestamp", datetime.datetime(3000, 1, 1, 10, 5, 2, 1234, umsgpack._utc_tzinfo),
+        b"\xc7\x0c\xff\x00\x12\xd4\x50\x00\x00\x00\x07\x91\x5f\x59\xce"],
 ]
 
 composite_test_vectors = [
@@ -262,6 +284,9 @@ unpack_exception_test_vectors = [
     # Reserved code (0xc1)
     ["reserved code", b"\xc1",
         umsgpack.ReservedCodeException],
+    # Unsupported timestamp (unsupported data length)
+    ["unsupported timestamp", b"\xc7\x02\xff\xaa\xbb",
+        umsgpack.UnsupportedTimestampException],
     # Invalid string (non utf-8)
     ["invalid string", b"\xa1\x80",
         umsgpack.InvalidStringException],
@@ -318,6 +343,7 @@ exported_vars_test_vector = [
     "UnsupportedTypeException",
     "InsufficientDataException",
     "InvalidStringException",
+    "UnsupportedTimestampException",
     "ReservedCodeException",
     "UnhashableKeyException",
     "DuplicateKeyException",
@@ -519,7 +545,7 @@ class TestUmsgpack(unittest.TestCase):
         exported_vars = list(filter(lambda x: not x.startswith("_"),
                                     dir(umsgpack)))
         # Ignore imports
-        exported_vars = list(filter(lambda x: x != "struct" and x != "collections" and x !=
+        exported_vars = list(filter(lambda x: x != "struct" and x != "collections" and x != "datetime" and x !=
                                     "sys" and x != "io" and x != "xrange", exported_vars))
 
         self.assertTrue(len(exported_vars) == len(exported_vars_test_vector))

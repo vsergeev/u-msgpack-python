@@ -1,6 +1,6 @@
 # u-msgpack-python [![Build Status](https://travis-ci.org/vsergeev/u-msgpack-python.svg?branch=master)](https://travis-ci.org/vsergeev/u-msgpack-python) [![GitHub release](https://img.shields.io/github/release/vsergeev/u-msgpack-python.svg?maxAge=7200)](https://github.com/vsergeev/u-msgpack-python) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/vsergeev/u-msgpack-python/blob/master/LICENSE)
 
-u-msgpack-python is a lightweight [MessagePack](http://msgpack.org/) serializer and deserializer module written in pure Python, compatible with both Python 2 and 3, as well CPython and PyPy implementations of Python. u-msgpack-python is fully compliant with the latest [MessagePack specification](https://github.com/msgpack/msgpack/blob/master/spec.md). In particular, it supports the new binary, UTF-8 string, and application-defined ext types.
+u-msgpack-python is a lightweight [MessagePack](http://msgpack.org/) serializer and deserializer module written in pure Python, compatible with both Python 2 and 3, as well CPython and PyPy implementations of Python. u-msgpack-python is fully compliant with the latest [MessagePack specification](https://github.com/msgpack/msgpack/blob/master/spec.md). In particular, it supports the new binary, UTF-8 string, application-defined ext, and timestamp types.
 
 u-msgpack-python is currently distributed on [PyPI](https://pypi.python.org/pypi/u-msgpack-python) and as a single file: [umsgpack.py](https://raw.github.com/vsergeev/u-msgpack-python/master/umsgpack.py).
 
@@ -81,18 +81,18 @@ b'\x01\x02\x03'
 
 Serializing and deserializing application-defined types with Ext handlers:
 ``` python
->>> umsgpack.packb([complex(1,2), datetime.datetime.now()],
+>>> umsgpack.packb([complex(1,2), decimal.Decimal("0.31")],
 ...  ext_handlers = {
 ...   complex: lambda obj: umsgpack.Ext(0x30, struct.pack("ff", obj.real, obj.imag)),
-...   datetime.datetime: lambda obj: umsgpack.Ext(0x40, obj.strftime("%Y%m%dT%H:%M:%S.%f").encode()),
-...  })
-b'\x92\xd70\x00\x00\x80?\x00\x00\x00@\xc7\x18@20161017T00:12:53.719377'
+...   decimal.Decimal: lambda obj: umsgpack.Ext(0x40, str(obj).encode()),
+... })
+b'\x92\xd70\x00\x00\x80?\x00\x00\x00@\xd6@0.31'
 >>> umsgpack.unpackb(_,
 ...  ext_handlers = {
 ...   0x30: lambda ext: complex(*struct.unpack("ff", ext.data)),
-...   0x40: lambda ext: datetime.datetime.strptime(ext.data.decode(), "%Y%m%dT%H:%M:%S.%f"),
-...  })
-[(1+2j), datetime.datetime(2016, 10, 17, 0, 12, 53, 719377)]
+...   0x40: lambda ext: decimal.Decimal(ext.data.decode()),
+... })
+[(1+2j), Decimal('0.31')]
 >>> 
 ```
 
@@ -120,37 +120,35 @@ custom types to callables that pack the type into an Ext object. The callable
 should accept the custom type object as an argument and return a packed
 `umsgpack.Ext` object.
 
-Example for packing `set`, `complex`, and `datetime.datetime` types into Ext
+Example for packing `set`, `complex`, and `decimal.Decimal` types into Ext
 objects with type codes 0x20, 0x30, and 0x40, respectively:
 
 ``` python
->>> umsgpack.packb([1, True, {"foo", 2}, complex(3, 4), datetime.datetime.now()],
+>>> umsgpack.packb([1, True, {"foo", 2}, complex(3, 4), decimal.Decimal("0.31")],
 ...  ext_handlers = {
 ...   set: lambda obj: umsgpack.Ext(0x20, umsgpack.packb(list(obj))),
 ...   complex: lambda obj: umsgpack.Ext(0x30, struct.pack("ff", obj.real, obj.imag)),
-...   datetime.datetime: lambda obj: umsgpack.Ext(0x40, obj.strftime("%Y%m%dT%H:%M:%S.%f").encode()),
-...  })
-b'\x95\x01\xc3\xc7\x06 \x92\xa3foo\x02\xd70\x00\x00@@\x00\x00\x80@\xc7\x18@20161015T02:28:35.666425'
+...   decimal.Decimal: lambda obj: umsgpack.Ext(0x40, str(obj).encode()),
+... })
+b'\x95\x01\xc3\xc7\x06 \x92\xa3foo\x02\xd70\x00\x00@@\x00\x00\x80@\xd6@0.31'
 >>> 
 ```
-
 Similarly, the unpacking functions accept an optional `ext_handlers` dictionary
 that maps Ext type codes to callables that unpack the Ext into a custom object.
 The callable should accept a `umsgpack.Ext` object as an argument and return an
 unpacked custom type object.
 
 Example for unpacking Ext objects with type codes 0x20, 0x30, and 0x40, into
-`set`, `complex`, and `datetime.datetime` typed objects, respectively:
+`set`, `complex`, and `decimal.Decimal` typed objects, respectively:
 
 ``` python
->>> umsgpack.unpackb(b'\x95\x01\xc3\xc7\x06 \x92\xa3foo\x02\xd70\x00\x00@@\x00\x00\x80@' \
-...                  b'\xc7\x18@20161015T02:28:35.666425',
+>>> umsgpack.unpackb(b'\x95\x01\xc3\xc7\x06 \x92\xa3foo\x02\xd70\x00\x00@@\x00\x00\x80@\xd6@0.31',
 ...  ext_handlers = {
 ...   0x20: lambda ext: set(umsgpack.unpackb(ext.data)),
 ...   0x30: lambda ext: complex(*struct.unpack("ff", ext.data)),
-...   0x40: lambda ext: datetime.datetime.strptime(ext.data.decode(), "%Y%m%dT%H:%M:%S.%f"),
-...  })
-[1, True, {'foo', 2}, (3+4j), datetime.datetime(2016, 10, 15, 2, 28, 35, 666425)]
+...   0x40: lambda ext: decimal.Decimal(ext.data.decode()),
+... })
+[1, True, {'foo', 2}, (3+4j), Decimal('0.31')]
 >>> 
 ```
 
@@ -341,6 +339,20 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
     >>> 
     ```
 
+* `UnsupportedTimestampException`: Unsupported timestamp encountered during unpacking.
+
+    The official timestamp extension type supports 32-bit, 64-bit and 96-bit
+    formats. This exception is thrown if a timestamp extension type with an
+    unsupported format is encountered.
+
+    ``` python
+    # Attempt to unpack invalid timestamp
+    >>> umsgpack.unpackb(b"\xd5\xff\x01\x02")
+    ...
+    umsgpack.UnsupportedTimestampException: unsupported timestamp with data length 2
+    >>> 
+    ```
+
 * `ReservedCodeException`: Reserved code encountered during unpacking.
 
     ``` python
@@ -387,6 +399,8 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 * The msgpack array format is unpacked into a Python list, unless it is the key of a map, in which case it is unpacked into a Python tuple
 * Python tuples and lists are both packed into the msgpack array format
 * Python float types are packed into the msgpack float32 or float64 format depending on the system's `sys.float_info`
+* The Python `datetime.datetime` type is packed into, and unpacked from, the msgpack `timestamp` format
+    * Note that this Python type only supports microsecond resolution, while the msgpack `timestamp` format supports nanosecond resolution. Timestamps with finer than microsecond resolution will lose precision during unpacking.
 
 ## Testing
 

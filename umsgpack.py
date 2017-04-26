@@ -45,6 +45,7 @@ License: MIT
 """
 import struct
 import collections
+import datetime
 import sys
 import io
 
@@ -165,6 +166,11 @@ class InsufficientDataException(UnpackException):
 
 class InvalidStringException(UnpackException):
     "Invalid UTF-8 string encountered during unpacking."
+    pass
+
+
+class UnsupportedTimestampException(UnpackException):
+    "Unsupported timestamp format encountered during unpacking."
     pass
 
 
@@ -341,6 +347,29 @@ def _pack_ext(obj, fp, options):
         raise UnsupportedTypeException("huge ext data")
 
 
+def _pack_ext_timestamp(obj, fp, options):
+    delta = obj - _epoch
+    seconds = delta.seconds + delta.days * 86400
+    microseconds = delta.microseconds
+
+    if microseconds == 0 and 0 <= seconds <= 2**32 - 1:
+        # 32-bit timestamp
+        fp.write(b"\xd6\xff" +
+                 struct.pack(">I", seconds))
+    elif 0 <= seconds <= 2**34 - 1:
+        # 64-bit timestamp
+        value = ((microseconds * 1000) << 34) | seconds
+        fp.write(b"\xd7\xff" +
+                 struct.pack(">Q", value))
+    elif -2**63 <= abs(seconds) <= 2**63 - 1:
+        # 96-bit timestamp
+        fp.write(b"\xc7\x0c\xff" +
+                 struct.pack(">I", microseconds * 1000) +
+                 struct.pack(">q", seconds))
+    else:
+        raise UnsupportedTypeException("huge timestamp")
+
+
 def _pack_array(obj, fp, options):
     if len(obj) <= 15:
         fp.write(struct.pack("B", 0x90 | len(obj)))
@@ -428,6 +457,8 @@ def _pack2(obj, fp, **options):
         _pack_array(obj, fp, options)
     elif isinstance(obj, dict):
         _pack_map(obj, fp, options)
+    elif isinstance(obj, datetime.datetime):
+        _pack_ext_timestamp(obj, fp, options)
     elif isinstance(obj, Ext):
         _pack_ext(obj, fp, options)
     elif ext_handlers:
@@ -498,6 +529,8 @@ def _pack3(obj, fp, **options):
         _pack_array(obj, fp, options)
     elif isinstance(obj, dict):
         _pack_map(obj, fp, options)
+    elif isinstance(obj, datetime.datetime):
+        _pack_ext_timestamp(obj, fp, options)
     elif isinstance(obj, Ext):
         _pack_ext(obj, fp, options)
     elif ext_handlers:
@@ -703,7 +736,15 @@ def _unpack_ext(code, fp, options):
     else:
         raise Exception("logic error, not ext: 0x%02x" % ord(code))
 
-    ext = Ext(ord(_read_except(fp, 1)), _read_except(fp, length))
+    ext_type = struct.unpack("b", _read_except(fp, 1))[0]
+    ext_data = _read_except(fp, length)
+
+    # Timestamp extension
+    if ext_type == -1:
+        return _unpack_ext_timestamp(code, ext_data, options)
+
+    # Application extension
+    ext = Ext(ext_type, ext_data)
 
     # Unpack with ext handler, if we have one
     ext_handlers = options.get("ext_handlers")
@@ -711,6 +752,28 @@ def _unpack_ext(code, fp, options):
         ext = ext_handlers[ext.type](ext)
 
     return ext
+
+
+def _unpack_ext_timestamp(code, data, options):
+    if len(data) == 4:
+        # 32-bit timestamp
+        seconds = struct.unpack(">I", data)[0]
+        microseconds = 0
+    elif len(data) == 8:
+        # 64-bit timestamp
+        value = struct.unpack(">Q", data)[0]
+        seconds = value & 0x3ffffffff
+        microseconds = (value >> 34) // 1000
+    elif len(data) == 12:
+        # 96-bit timestamp
+        seconds = struct.unpack(">q", data[4:12])[0]
+        microseconds = struct.unpack(">I", data[0:4])[0] // 1000
+    else:
+        raise UnsupportedTimestampException(
+            "unsupported timestamp with data length %d" % len(data))
+
+    return _epoch + datetime.timedelta(seconds=seconds,
+                                       microseconds=microseconds)
 
 
 def _unpack_array(code, fp, options):
@@ -801,6 +864,8 @@ def _unpack2(fp, **options):
             Insufficient data to unpack the serialized object.
         InvalidStringException(UnpackException):
             Invalid UTF-8 string encountered during unpacking.
+        UnsupportedTimestampException(UnpackException):
+            Unsupported timestamp format encountered during unpacking.
         ReservedCodeException(UnpackException):
             Reserved code encountered during unpacking.
         UnhashableKeyException(UnpackException):
@@ -843,6 +908,8 @@ def _unpack3(fp, **options):
             Insufficient data to unpack the serialized object.
         InvalidStringException(UnpackException):
             Invalid UTF-8 string encountered during unpacking.
+        UnsupportedTimestampException(UnpackException):
+            Unsupported timestamp format encountered during unpacking.
         ReservedCodeException(UnpackException):
             Reserved code encountered during unpacking.
         UnhashableKeyException(UnpackException):
@@ -888,6 +955,8 @@ def _unpackb2(s, **options):
             Insufficient data to unpack the serialized object.
         InvalidStringException(UnpackException):
             Invalid UTF-8 string encountered during unpacking.
+        UnsupportedTimestampException(UnpackException):
+            Unsupported timestamp format encountered during unpacking.
         ReservedCodeException(UnpackException):
             Reserved code encountered during unpacking.
         UnhashableKeyException(UnpackException):
@@ -934,6 +1003,8 @@ def _unpackb3(s, **options):
             Insufficient data to unpack the serialized object.
         InvalidStringException(UnpackException):
             Invalid UTF-8 string encountered during unpacking.
+        UnsupportedTimestampException(UnpackException):
+            Unsupported timestamp format encountered during unpacking.
         ReservedCodeException(UnpackException):
             Reserved code encountered during unpacking.
         UnhashableKeyException(UnpackException):
@@ -966,12 +1037,22 @@ def __init():
     global load
     global loads
     global compatibility
+    global _epoch
+    global _utc_tzinfo
     global _float_precision
     global _unpack_dispatch_table
     global xrange
 
     # Compatibility mode for handling strings/bytes with the old specification
     compatibility = False
+
+    if sys.version_info[0] == 3:
+        _utc_tzinfo = datetime.timezone.utc
+    else:
+        _utc_tzinfo = None
+
+    # Calculate epoch datetime
+    _epoch = datetime.datetime(1970, 1, 1, tzinfo=_utc_tzinfo)
 
     # Auto-detect system float precision
     if sys.float_info.mant_dig == 53:
