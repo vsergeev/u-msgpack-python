@@ -72,12 +72,8 @@ class Ext:
         Construct a new Ext object.
 
         Args:
-            type: application-defined type integer from 0 to 127
+            type: application-defined type integer
             data: application-defined data byte array
-
-        Raises:
-            TypeError:
-                Specified ext type is outside of 0 to 127 range.
 
         Example:
         >>> foo = umsgpack.Ext(0x05, b"\x01\x02\x03")
@@ -88,9 +84,9 @@ class Ext:
         Ext Object (Type: 0x05, Data: 01 02 03)
         >>>
         """
-        # Application ext type should be 0 <= type <= 127
-        if not isinstance(type, int) or not (type >= 0 and type <= 127):
-            raise TypeError("ext type out of range")
+        # Check type is type int
+        if not isinstance(type, int):
+            raise TypeError("ext type is not type integer")
         # Check data is type bytes
         elif sys.version_info[0] == 3 and not isinstance(data, bytes):
             raise TypeError("ext data is not type \'bytes\'")
@@ -739,38 +735,38 @@ def _unpack_ext(code, fp, options):
     ext_type = struct.unpack("b", _read_except(fp, 1))[0]
     ext_data = _read_except(fp, length)
 
-    # Timestamp extension
-    if ext_type == -1:
-        return _unpack_ext_timestamp(code, ext_data, options)
-
-    # Application extension
+    # Create extension object
     ext = Ext(ext_type, ext_data)
 
     # Unpack with ext handler, if we have one
     ext_handlers = options.get("ext_handlers")
     if ext_handlers and ext.type in ext_handlers:
-        ext = ext_handlers[ext.type](ext)
+        return ext_handlers[ext.type](ext)
+
+    # Timestamp extension
+    if ext.type == -1:
+        return _unpack_ext_timestamp(ext, options)
 
     return ext
 
 
-def _unpack_ext_timestamp(code, data, options):
-    if len(data) == 4:
+def _unpack_ext_timestamp(ext, options):
+    if len(ext.data) == 4:
         # 32-bit timestamp
-        seconds = struct.unpack(">I", data)[0]
+        seconds = struct.unpack(">I", ext.data)[0]
         microseconds = 0
-    elif len(data) == 8:
+    elif len(ext.data) == 8:
         # 64-bit timestamp
-        value = struct.unpack(">Q", data)[0]
+        value = struct.unpack(">Q", ext.data)[0]
         seconds = value & 0x3ffffffff
         microseconds = (value >> 34) // 1000
-    elif len(data) == 12:
+    elif len(ext.data) == 12:
         # 96-bit timestamp
-        seconds = struct.unpack(">q", data[4:12])[0]
-        microseconds = struct.unpack(">I", data[0:4])[0] // 1000
+        seconds = struct.unpack(">q", ext.data[4:12])[0]
+        microseconds = struct.unpack(">I", ext.data[0:4])[0] // 1000
     else:
         raise UnsupportedTimestampException(
-            "unsupported timestamp with data length %d" % len(data))
+            "unsupported timestamp with data length %d" % len(ext.data))
 
     return _epoch + datetime.timedelta(seconds=seconds,
                                        microseconds=microseconds)

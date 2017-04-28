@@ -334,6 +334,22 @@ ext_handlers_test_vectors = [
      b"\xd7\x30\x93\xc4\x03\x61\x62\x63\x7b\xc3"],
 ]
 
+override_ext_handlers = {
+    datetime.datetime:
+        lambda obj: umsgpack.Ext(0x40, obj.strftime("%Y%m%dT%H:%M:%S.%f").encode()),
+    -0x01:
+        lambda ext: ext,
+}
+
+override_ext_handlers_test_vectors = [
+    ["pack override",
+        datetime.datetime(2000, 1, 1, 10, 5, 2, 0, umsgpack._utc_tzinfo),
+        b'\xc7\x18@20000101T10:05:02.000000'],
+    ["unpack override",
+        umsgpack.Ext(-0x01, b"\x00\xbb\xcc\xdd\x01\x02\x03\x04\x05\x06\x07\x08"),
+        b'\xc7\x0c\xff\x00\xbb\xcc\xdd\x01\x02\x03\x04\x05\x06\x07\x08'],
+]
+
 # These are the only global variables that should be exported by umsgpack
 exported_vars_test_vector = [
     "Ext",
@@ -492,10 +508,7 @@ class TestUmsgpack(unittest.TestCase):
 
     def test_ext_exceptions(self):
         with self.assertRaises(TypeError):
-            _ = umsgpack.Ext(-1, b"")
-
-        with self.assertRaises(TypeError):
-            _ = umsgpack.Ext(128, b"")
+            _ = umsgpack.Ext(5.0, b"")
 
         with self.assertRaises(TypeError):
             _ = umsgpack.Ext(0, u"unicode string")
@@ -526,6 +539,26 @@ class TestUmsgpack(unittest.TestCase):
 
             packed = umsgpack.packb(obj, force_float_precision=precision)
             self.assertEqual(packed, data)
+
+    def test_pack_ext_override(self):
+        # Test overridden packing of datetime.datetime
+        (name, obj, data) = override_ext_handlers_test_vectors[0]
+        obj_repr = repr(obj)
+        print("\tTesting %s: object %s" %
+              (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+
+        packed = umsgpack.packb(obj, ext_handlers=override_ext_handlers)
+        self.assertEqual(packed, data)
+
+    def test_unpack_ext_override(self):
+        # Test overridden unpacking of Ext type -1
+        (name, obj, data) = override_ext_handlers_test_vectors[1]
+        obj_repr = repr(obj)
+        print("\tTesting %s: object %s" %
+              (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+
+        unpacked = umsgpack.unpackb(data, ext_handlers=override_ext_handlers)
+        self.assertEqual(unpacked, obj)
 
     def test_streaming_writer(self):
         # Try first composite test vector

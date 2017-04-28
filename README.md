@@ -400,7 +400,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 * Python tuples and lists are both packed into the msgpack array format
 * Python float types are packed into the msgpack float32 or float64 format depending on the system's `sys.float_info`
 * The Python `datetime.datetime` type is packed into, and unpacked from, the msgpack `timestamp` format
-    * Note that this Python type only supports microsecond resolution, while the msgpack `timestamp` format supports nanosecond resolution. Timestamps with finer than microsecond resolution will lose precision during unpacking.
+    * Note that this Python type only supports microsecond resolution, while the msgpack `timestamp` format supports nanosecond resolution. Timestamps with finer than microsecond resolution will lose precision during unpacking. Users may override the packing and unpacking of the msgpack `timestamp` format with a custom type for alternate behavior.
 
 ## Testing
 
