@@ -297,9 +297,9 @@ float_precision_test_vectors = [
 CustomType = namedtuple('CustomType', ['x', 'y', 'z'])
 
 ext_handlers = {
-    complex: lambda obj: umsgpack.Ext(0x20, struct.pack("ff", obj.real, obj.imag)),
+    complex: lambda obj: umsgpack.Ext(0x20, struct.pack("<ff", obj.real, obj.imag)),
     CustomType: lambda obj: umsgpack.Ext(0x30, umsgpack.packb(list(obj))),
-    0x20: lambda ext: complex(*struct.unpack("ff", ext.data)),
+    0x20: lambda ext: complex(*struct.unpack("<ff", ext.data)),
     0x30: lambda ext: CustomType(*umsgpack.unpackb(ext.data)),
 }
 
