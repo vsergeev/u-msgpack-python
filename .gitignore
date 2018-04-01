@@ -6,3 +6,4 @@ dist/
 *.swp
 .tox/
 .cache/
+.pytest_cache/
