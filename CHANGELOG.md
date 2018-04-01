@@ -1,3 +1,9 @@
+* Version 2.5.0 - 03/31/2018
+    * Add support for the timestamp extension type.
+    * Fix tests on big endian platforms
+    * Contributors
+        * Sergei Trofimovich, @trofi - 16510e9
+
 * Version 2.4.1 - 04/25/2017
     * Fix module version tuple inconsistency.
 
