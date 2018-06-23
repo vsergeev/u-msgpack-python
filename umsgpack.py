@@ -61,7 +61,7 @@ version = (2, 5, 0)
 ##############################################################################
 
 # Extension type for application-defined types and data
-class Ext:
+class Ext(object):
     """
     The Ext class facilitates creating a serializable extension object to store
     an application-defined type and data byte array.
