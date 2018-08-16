@@ -48,8 +48,13 @@ import collections
 import datetime
 import sys
 import io
+import itertools
 
-from itertools import chain, filterfalse
+_chain = itertools.chain
+if hasattr(itertools, 'filterfalse'):
+    _filterfalse = itertools.filterfalse
+else:
+    _filterfalse = itertools.ifilterfalse
 
 __version__ = "2.5.0"
 "Module version string"
@@ -135,26 +140,26 @@ class Ext(object):
 #############################################################################
 
 
-def filter_unique(iterable):
+def _filter_unique(iterable):
     seen = set()
     seen_add = seen.add  # this is just to prevent excessive lookups
-    for x in filterfalse(seen.__contains__, iterable):
+    for x in _filterfalse(seen.__contains__, iterable):
         seen_add(x)
         yield x
 
 
-def subclasses(cls, unique=True):
+def _subclasses(cls, unique=True):
     """Iterates over the set of all subclasses of an object. Unlike
     class.__subclasses__(), this returns all subclasses, not just direct ones.
     Note: though issubclass(cls, cls) returns True, we do not yield cls"""
     if unique:
-        for x in filter_unique(subclasses(cls, unique=False)):
+        for x in _filter_unique(_subclasses(cls, unique=False)):
             yield x
     else:
         sub = tuple(x for x in cls.__subclasses__() if x is not type)
         for x in sub:
             yield x
-        for x in chain.from_iterable(subclasses(x, unique=False) for x in sub):
+        for x in _chain.from_iterable(_subclasses(x, unique=False) for x in sub):
             yield x
 
 
@@ -859,7 +864,7 @@ def _unpack_map(code, fp, options):
 
 
 def _unpack(fp, options):
-    auto_handlers = {x.type: x._unpackb for x in subclasses(Ext)}
+    auto_handlers = {x.type: x._unpackb for x in _subclasses(Ext)}
     if 'ext_handlers' in options:
         auto_handlers.update(options['ext_handlers'])
     options['ext_handlers'] = auto_handlers        
