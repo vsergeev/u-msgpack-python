@@ -49,6 +49,8 @@ import datetime
 import sys
 import io
 
+from itertools import chain, filterfalse
+
 __version__ = "2.5.0"
 "Module version string"
 
@@ -126,6 +128,33 @@ class Ext(object):
         Provide a hash of this Ext object.
         """
         return hash((self.type, self.data))
+    
+    
+#############################################################################
+# Autodetect subclasses of Ext
+#############################################################################
+
+
+def filter_unique(iterable):
+    seen = set()
+    seen_add = seen.add  # this is just to prevent excessive lookups
+    for x in filterfalse(seen.__contains__, iterable):
+        seen_add(x)
+        yield x
+
+
+def subclasses(cls, unique=True):
+    """Iterates over the set of all subclasses of an object. Unlike
+    class.__subclasses__(), this returns all subclasses, not just direct ones.
+    Note: though issubclass(cls, cls) returns True, we do not yield cls"""
+    if unique:
+        return filter_unique(subclasses(cls, unique=False))
+    else:
+        sub = tuple(x for x in cls.__subclasses__() if x is not type)
+        for x in sub:
+            yield x
+        for x in chain.from_iterable(subclasses(x, unique=False) for x in sub):
+            yield x
 
 
 class InvalidString(bytes):
@@ -829,6 +858,10 @@ def _unpack_map(code, fp, options):
 
 
 def _unpack(fp, options):
+    auto_handlers = {x.type: x._unpackb for x in subclasses(Ext)}
+    if 'ext_handlers' in options:
+        auto_handlers.update(options['ext_handlers'])
+    options['ext_handlers'] = auto_handlers        
     code = _read_except(fp, 1)
     return _unpack_dispatch_table[code](code, fp, options)
 
