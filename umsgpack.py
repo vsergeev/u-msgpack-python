@@ -61,7 +61,7 @@ version = (2, 5, 0)
 ##############################################################################
 
 # Extension type for application-defined types and data
-class Ext:
+class Ext(object):
     """
     The Ext class facilitates creating a serializable extension object to store
     an application-defined type and data byte array.
@@ -449,14 +449,14 @@ def _pack2(obj, fp, **options):
         _pack_string(obj, fp, options)
     elif isinstance(obj, str):
         _pack_binary(obj, fp, options)
+    elif isinstance(obj, Ext):
+        _pack_ext(obj, fp, options)
     elif isinstance(obj, list) or isinstance(obj, tuple):
         _pack_array(obj, fp, options)
     elif isinstance(obj, dict):
         _pack_map(obj, fp, options)
     elif isinstance(obj, datetime.datetime):
         _pack_ext_timestamp(obj, fp, options)
-    elif isinstance(obj, Ext):
-        _pack_ext(obj, fp, options)
     elif ext_handlers:
         # Linear search for superclass
         t = next((t for t in ext_handlers.keys() if isinstance(obj, t)), None)
@@ -521,14 +521,14 @@ def _pack3(obj, fp, **options):
         _pack_string(obj, fp, options)
     elif isinstance(obj, bytes):
         _pack_binary(obj, fp, options)
+    elif isinstance(obj, Ext):
+        _pack_ext(obj, fp, options)
     elif isinstance(obj, list) or isinstance(obj, tuple):
         _pack_array(obj, fp, options)
     elif isinstance(obj, dict):
         _pack_map(obj, fp, options)
     elif isinstance(obj, datetime.datetime):
         _pack_ext_timestamp(obj, fp, options)
-    elif isinstance(obj, Ext):
-        _pack_ext(obj, fp, options)
     elif ext_handlers:
         # Linear search for superclass
         t = next((t for t in ext_handlers.keys() if isinstance(obj, t)), None)
