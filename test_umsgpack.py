@@ -577,6 +577,9 @@ class TestUmsgpack(unittest.TestCase):
         class Stub(umsgpack.Ext):
             type = 1
             
+            def __init__(self):
+                pass
+            
             @property
             def data(self):
                 return umsgpack.packb(None)
