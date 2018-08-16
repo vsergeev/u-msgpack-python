@@ -588,7 +588,7 @@ class TestUmsgpack(unittest.TestCase):
         selt.assertTrue(isinstance(msgpack.unpackb(msgpack.packb(Stub())), Stub))
         
     def test_ext_namedtuple_inheritor(self):
-        class Stub(umsgpack.Ext, namedtuple('_Stub', ['foo']):
+        class Stub(umsgpack.Ext, namedtuple('_Stub', ['foo'])):
             type = 2
                    
             def __init__(self, *args, **kwargs):
@@ -598,7 +598,7 @@ class TestUmsgpack(unittest.TestCase):
             def _unpackb(cls, ext):
                 return cls(*msgpack.unpackb(ext.data))
             
-        selt.assertTrue(isinstance(msgpack.unpackb(msgpack.packb(Stub())), Stub))
+        selt.assertTrue(isinstance(msgpack.unpackb(msgpack.packb(Stub(1))), Stub))
 
     def test_namespacing(self):
         # Get a list of global variables from umsgpack module
