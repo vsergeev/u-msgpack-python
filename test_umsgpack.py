@@ -585,20 +585,20 @@ class TestUmsgpack(unittest.TestCase):
             def _unpackb(cls, ext):
                 return cls()
             
-        self.assertTrue(isinstance(msgpack.unpackb(msgpack.packb(Stub())), Stub))
+        self.assertTrue(isinstance(umsgpack.unpackb(umsgpack.packb(Stub())), Stub))
         
     def test_ext_namedtuple_inheritor(self):
         class Stub(umsgpack.Ext, namedtuple('_Stub', ['foo'])):
             type = 2
                    
             def __init__(self, *args, **kwargs):
-                super(Stub, self).__init__(Stub.type, msgpack.packb(tuple(self)))
+                super(Stub, self).__init__(Stub.type, umsgpack.packb(tuple(self)))
            
             @classmethod
             def _unpackb(cls, ext):
-                return cls(*msgpack.unpackb(ext.data))
+                return cls(*umsgpack.unpackb(ext.data))
             
-        self.assertTrue(isinstance(msgpack.unpackb(msgpack.packb(Stub(1))), Stub))
+        self.assertTrue(isinstance(umsgpack.unpackb(umsgpack.packb(Stub(1))), Stub))
 
     def test_namespacing(self):
         # Get a list of global variables from umsgpack module
