@@ -572,6 +572,33 @@ class TestUmsgpack(unittest.TestCase):
         (_, obj, data) = composite_test_vectors[0]
         reader = io.BytesIO(data)
         self.assertEqual(umsgpack.unpack(reader), obj)
+        
+    def test_ext_inheritor(self):
+        class Stub(umsgpack.Ext):
+            type = 1
+            
+            @property
+            def data(self):
+                return umsgpack.packb(None)
+           
+            @classmethod
+            def _unpackb(cls, ext):
+                return cls()
+            
+        selt.assertTrue(isinstance(msgpack.unpackb(msgpack.packb(Stub())), Stub))
+        
+    def test_ext_namedtuple_inheritor(self):
+        class Stub(umsgpack.Ext, namedtuple('_Stub', ['foo']):
+            type = 2
+                   
+            def __init__(self, *args, **kwargs):
+                super(Stub, self).__init__(Stub.type, msgpack.packb(tuple(self)))
+           
+            @classmethod
+            def _unpackb(cls, ext):
+                return cls(*msgpack.unpackb(ext.data))
+            
+        selt.assertTrue(isinstance(msgpack.unpackb(msgpack.packb(Stub())), Stub))
 
     def test_namespacing(self):
         # Get a list of global variables from umsgpack module
