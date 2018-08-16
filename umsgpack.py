@@ -148,7 +148,8 @@ def subclasses(cls, unique=True):
     class.__subclasses__(), this returns all subclasses, not just direct ones.
     Note: though issubclass(cls, cls) returns True, we do not yield cls"""
     if unique:
-        return filter_unique(subclasses(cls, unique=False))
+        for x in filter_unique(subclasses(cls, unique=False)):
+            yield x
     else:
         sub = tuple(x for x in cls.__subclasses__() if x is not type)
         for x in sub:
