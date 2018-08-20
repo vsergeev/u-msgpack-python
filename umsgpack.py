@@ -443,7 +443,7 @@ def _pack2(obj, fp, **options):
         _pack_ext(ext_handlers[obj.__class__](obj), fp, options)
     elif isinstance(obj, bool):
         _pack_boolean(obj, fp, options)
-    elif isinstance(obj, int) or isinstance(obj, long):
+    elif isinstance(obj, (int, long)):
         _pack_integer(obj, fp, options)
     elif isinstance(obj, float):
         _pack_float(obj, fp, options)
@@ -455,7 +455,7 @@ def _pack2(obj, fp, **options):
         _pack_string(obj, fp, options)
     elif isinstance(obj, str):
         _pack_binary(obj, fp, options)
-    elif isinstance(obj, list) or isinstance(obj, tuple):
+    elif isinstance(obj, (list, tuple)):
         _pack_array(obj, fp, options)
     elif isinstance(obj, dict):
         _pack_map(obj, fp, options)
@@ -527,7 +527,7 @@ def _pack3(obj, fp, **options):
         _pack_string(obj, fp, options)
     elif isinstance(obj, bytes):
         _pack_binary(obj, fp, options)
-    elif isinstance(obj, list) or isinstance(obj, tuple):
+    elif isinstance(obj, (list, tuple)):
         _pack_array(obj, fp, options)
     elif isinstance(obj, dict):
         _pack_map(obj, fp, options)
