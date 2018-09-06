@@ -353,6 +353,7 @@ override_ext_handlers_test_vectors = [
 # These are the only global variables that should be exported by umsgpack
 exported_vars_test_vector = [
     "Ext",
+    "ExtType",
     "InvalidString",
     "PackException",
     "UnpackException",
@@ -572,35 +573,35 @@ class TestUmsgpack(unittest.TestCase):
         (_, obj, data) = composite_test_vectors[0]
         reader = io.BytesIO(data)
         self.assertEqual(umsgpack.unpack(reader), obj)
-        
+
     def test_ext_inheritor(self):
         class Stub(umsgpack.Ext):
             type = 1
-            
+
             def __init__(self):
                 pass
-            
+
             @property
             def data(self):
                 return umsgpack.packb(None)
-           
+
             @classmethod
             def _unpackb(cls, ext):
                 return cls()
-            
+
         self.assertTrue(isinstance(umsgpack.unpackb(umsgpack.packb(Stub())), Stub))
-        
+
     def test_ext_namedtuple_inheritor(self):
         class Stub(umsgpack.Ext, namedtuple('_Stub', ['foo'])):
             type = 2
-                   
+
             def __init__(self, *args, **kwargs):
                 super(Stub, self).__init__(Stub.type, umsgpack.packb(tuple(self)))
-           
+
             @classmethod
             def _unpackb(cls, ext):
                 return cls(*umsgpack.unpackb(ext.data))
-            
+
         self.assertTrue(isinstance(umsgpack.unpackb(umsgpack.packb(Stub(1))), Stub))
 
     def test_namespacing(self):

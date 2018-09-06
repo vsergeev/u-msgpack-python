@@ -133,8 +133,11 @@ class Ext(object):
         Provide a hash of this Ext object.
         """
         return hash((self.type, self.data))
-    
-    
+
+
+ExtType = Ext  # alias for msgpack-python compatibility
+
+
 #############################################################################
 # Autodetect subclasses of Ext
 #############################################################################
@@ -864,10 +867,11 @@ def _unpack_map(code, fp, options):
 
 
 def _unpack(fp, options):
-    auto_handlers = {x.type: x._unpackb for x in _subclasses(Ext)}
+    getter = lambda x: getattr(x, 'type', getattr(x, 'code', float('NaN')))
+    auto_handlers = {getter(x): x._unpackb for x in _subclasses(Ext)}
     if 'ext_handlers' in options:
         auto_handlers.update(options['ext_handlers'])
-    options['ext_handlers'] = auto_handlers        
+    options['ext_handlers'] = auto_handlers
     code = _read_except(fp, 1)
     return _unpack_dispatch_table[code](code, fp, options)
 
