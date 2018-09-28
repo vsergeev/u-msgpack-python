@@ -615,6 +615,30 @@ class TestUmsgpack(unittest.TestCase):
         for var in exported_vars_test_vector:
             self.assertTrue(var in exported_vars)
 
+    def test_load_short_read(self):
+        # When reading from files, the network, etc. there's no guarantee that
+        # read(n) returns n bytes. Simulate this with a file-like object that
+        # returns 1 byte at a time.
+
+        class SlowFile(object):
+            def __init__(self, data):
+                self._data = data
+
+            def read(self, n=None):
+                if n is None or len(self._data) == 0:
+                    data, self._data = self._data, b''
+                    return data
+
+                chunk = self._data[0:1]
+                self._data = self._data[1:]
+                return chunk
+
+        obj = {'hello': 'world'}
+        f = SlowFile(umsgpack.dumps(obj))
+        unpacked = umsgpack.load(f)
+
+        self.assertEqual(unpacked, obj)
+
 
 if __name__ == '__main__':
     unittest.main()

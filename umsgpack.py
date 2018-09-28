@@ -626,9 +626,20 @@ def _packb3(obj, **options):
 
 
 def _read_except(fp, n):
+    if n == 0:
+        return b""
+
     data = fp.read(n)
-    if len(data) < n:
+    if len(data) == 0:
         raise InsufficientDataException()
+
+    while len(data) < n:
+        chunk = fp.read(n - len(data))
+        if len(chunk) == 0:
+            raise InsufficientDataException()
+
+        data += chunk
+
     return data
 
 
