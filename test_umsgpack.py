@@ -14,6 +14,7 @@ import unittest
 import datetime
 import io
 from collections import OrderedDict, namedtuple
+import math
 
 import umsgpack
 
@@ -584,6 +585,30 @@ class TestUmsgpack(unittest.TestCase):
         self.assertTrue(len(exported_vars) == len(exported_vars_test_vector))
         for var in exported_vars_test_vector:
             self.assertTrue(var in exported_vars)
+
+    def test_load_short_read(self):
+        # When reading from files, the network, etc.
+        # there's no guarantee that read(n) returns n bytes
+        # so you need to keep calling read() until you get all the data.
+
+        class File(object):
+            def __init__(self, data):
+                self._data = data
+
+            def read(self, n=None):
+                if n is None or n <= 0 or len(self._data) == 0:
+                    data, self._data = self._data, b''
+                    return data
+
+                n = int(math.ceil(n / 2.0))
+                self._data, data = self._data[n:], self._data[:n]
+                return data
+
+        p = {'hello': 'world'}
+        file = File(umsgpack.dumps(p))
+        q = umsgpack.load(file)
+        self.assertEqual(p, q)
+
 
 
 if __name__ == '__main__':
