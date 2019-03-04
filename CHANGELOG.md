@@ -1,3 +1,12 @@
+* Version 2.5.1 - 03/03/2019
+    * Fix handling of naive/aware datetime objects when packing the timestamp extension type.
+    * Add handling for short reads during file object unpacking.
+    * Make Ext base class a new-style object for cleaner inheritance in Python 2.
+    * Improve length comparisons and instance checks for minor performance improvement.
+    * Contributors
+        * Gabe Appleton, @gappleto97 - 28907ba, 76751f3, 7a9b717
+        * DisposaBoy, @DisposaBoy - 50b1dd3
+
 * Version 2.5.0 - 03/31/2018
     * Add support for the timestamp extension type.
     * Fix tests on big endian platforms
