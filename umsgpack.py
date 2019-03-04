@@ -348,7 +348,14 @@ def _pack_ext(obj, fp, options):
 
 
 def _pack_ext_timestamp(obj, fp, options):
-    delta = obj - _epoch
+    if not obj.tzinfo:
+        # Object is naive datetime, convert to aware date time,
+        # assuming UTC timezone
+        delta = obj.replace(tzinfo=_utc_tzinfo) - _epoch
+    else:
+        # Object is aware datetime
+        delta = obj - _epoch
+
     seconds = delta.seconds + delta.days * 86400
     microseconds = delta.microseconds
 
@@ -1052,9 +1059,21 @@ def __init():
     if sys.version_info[0] == 3:
         _utc_tzinfo = datetime.timezone.utc
     else:
-        _utc_tzinfo = None
+        class UTC(datetime.tzinfo):
+            ZERO = datetime.timedelta(0)
 
-    # Calculate epoch datetime
+            def utcoffset(self, dt):
+                return UTC.ZERO
+
+            def tzname(self, dt):
+                return "UTC"
+
+            def dst(self, dt):
+                return UTC.ZERO
+
+        _utc_tzinfo = UTC()
+
+    # Calculate an aware epoch datetime
     _epoch = datetime.datetime(1970, 1, 1, tzinfo=_utc_tzinfo)
 
     # Auto-detect system float precision

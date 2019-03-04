@@ -319,6 +319,18 @@ float_precision_test_vectors = [
     ["float precision double", 2.5, b"\xcb\x40\x04\x00\x00\x00\x00\x00\x00"],
 ]
 
+naive_timestamp_test_vectors = [
+    ["32-bit timestamp (naive)", datetime.datetime(2000, 1, 1, 10, 5, 2, 0, umsgpack._utc_tzinfo),
+        b"\xd6\xff\x38\x6d\xd1\x4e",
+        datetime.datetime(2000, 1, 1, 10, 5, 2, 0, umsgpack._utc_tzinfo)],
+    ["64-bit timestamp (naive)", datetime.datetime(2200, 1, 1, 10, 5, 2, 1234, umsgpack._utc_tzinfo),
+        b"\xd7\xff\x00\x4b\x51\x41\xb0\x9e\xa6\xce",
+        datetime.datetime(2200, 1, 1, 10, 5, 2, 1234, umsgpack._utc_tzinfo)],
+    ["96-bit timestamp (naive)", datetime.datetime(3000, 1, 1, 10, 5, 2, 1234, umsgpack._utc_tzinfo),
+        b"\xc7\x0c\xff\x00\x12\xd4\x50\x00\x00\x00\x07\x91\x5f\x59\xce",
+        datetime.datetime(3000, 1, 1, 10, 5, 2, 1234, umsgpack._utc_tzinfo)],
+]
+
 CustomType = namedtuple('CustomType', ['x', 'y', 'z'])
 
 ext_handlers = {
@@ -539,6 +551,24 @@ class TestUmsgpack(unittest.TestCase):
 
             packed = umsgpack.packb(obj, force_float_precision=precision)
             self.assertEqual(packed, data)
+
+    def test_pack_naive_timestamp(self):
+        for (name, obj, data, _) in naive_timestamp_test_vectors:
+            obj_repr = repr(obj)
+            print("\t Testing %s: object %s" %
+                  (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+
+            packed = umsgpack.packb(obj)
+            self.assertEqual(packed, data)
+
+    def test_unpack_naive_timestamp(self):
+        for (name, _, data, obj) in naive_timestamp_test_vectors:
+            obj_repr = repr(obj)
+            print("\t Testing %s: object %s" %
+                  (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+
+            unpacked = umsgpack.unpackb(data)
+            self.assertEqual(unpacked, obj)
 
     def test_pack_ext_override(self):
         # Test overridden packing of datetime.datetime
