@@ -44,10 +44,16 @@ types.
 License: MIT
 """
 import struct
-import collections
 import datetime
-import sys
-import io
+
+from collections import OrderedDict
+from io import BytesIO
+from sys import version_info, float_info
+
+if version_info[0:2] >= (3, 3):
+    from collections.abc import Hashable
+else:
+    from collections import Hashable
 
 __version__ = "2.5.1"
 "Module version string"
@@ -88,9 +94,9 @@ class Ext(object):
         if not isinstance(type, int):
             raise TypeError("ext type is not type integer")
         # Check data is type bytes
-        elif sys.version_info[0] == 3 and not isinstance(data, bytes):
+        elif version_info[0] == 3 and not isinstance(data, bytes):
             raise TypeError("ext data is not type \'bytes\'")
-        elif sys.version_info[0] == 2 and not isinstance(data, str):
+        elif version_info[0] == 2 and not isinstance(data, str):
             raise TypeError("ext data is not type \'str\'")
         self.type = type
         self.data = data
@@ -583,7 +589,7 @@ def _packb2(obj, **options):
     '\x82\xa7compact\xc3\xa6schema\x00'
     >>>
     """
-    fp = io.BytesIO()
+    fp = BytesIO()
     _pack2(obj, fp, **options)
     return fp.getvalue()
 
@@ -616,7 +622,7 @@ def _packb3(obj, **options):
     b'\x82\xa7compact\xc3\xa6schema\x00'
     >>>
     """
-    fp = io.BytesIO()
+    fp = BytesIO()
     _pack3(obj, fp, **options)
     return fp.getvalue()
 
@@ -827,7 +833,7 @@ def _unpack_map(code, fp, options):
         raise Exception("logic error, not map: 0x%02x" % ord(code))
 
     d = {} if not options.get('use_ordered_dict') \
-        else collections.OrderedDict()
+        else OrderedDict()
     for _ in xrange(length):
         # Unpack key
         k = _unpack(fp, options)
@@ -835,7 +841,7 @@ def _unpack_map(code, fp, options):
         if isinstance(k, list):
             # Attempt to convert list into a hashable tuple
             k = _deep_list_to_tuple(k)
-        elif not isinstance(k, collections.Hashable):
+        elif not isinstance(k, Hashable):
             raise UnhashableKeyException(
                 "encountered unhashable key: %s, %s" % (str(k), str(type(k))))
         elif k in d:
@@ -993,7 +999,7 @@ def _unpackb2(s, **options):
     """
     if not isinstance(s, (str, bytearray)):
         raise TypeError("packed data must be type 'str' or 'bytearray'")
-    return _unpack(io.BytesIO(s), options)
+    return _unpack(BytesIO(s), options)
 
 
 # For Python 3, expects a bytes object
@@ -1041,7 +1047,7 @@ def _unpackb3(s, **options):
     """
     if not isinstance(s, (bytes, bytearray)):
         raise TypeError("packed data must be type 'bytes' or 'bytearray'")
-    return _unpack(io.BytesIO(s), options)
+    return _unpack(BytesIO(s), options)
 
 #############################################################################
 # Module Initialization
@@ -1067,7 +1073,7 @@ def __init():
     # Compatibility mode for handling strings/bytes with the old specification
     compatibility = False
 
-    if sys.version_info[0] == 3:
+    if version_info[0] == 3:
         _utc_tzinfo = datetime.timezone.utc
     else:
         class UTC(datetime.tzinfo):
@@ -1088,13 +1094,13 @@ def __init():
     _epoch = datetime.datetime(1970, 1, 1, tzinfo=_utc_tzinfo)
 
     # Auto-detect system float precision
-    if sys.float_info.mant_dig == 53:
+    if float_info.mant_dig == 53:
         _float_precision = "double"
     else:
         _float_precision = "single"
 
     # Map packb and unpackb to the appropriate version
-    if sys.version_info[0] == 3:
+    if version_info[0] == 3:
         pack = _pack3
         packb = _packb3
         dump = _pack3
