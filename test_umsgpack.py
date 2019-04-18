@@ -609,7 +609,7 @@ class TestUmsgpack(unittest.TestCase):
                                     dir(umsgpack)))
         # Ignore imports
         exported_vars = list(filter(lambda x: x != "struct" and x != "collections" and x != "datetime" and x !=
-                                    "sys" and x != "io" and x != "xrange", exported_vars))
+                                    "sys" and x != "io" and x != "xrange" and x != "Hashable", exported_vars))
 
         self.assertTrue(len(exported_vars) == len(exported_vars_test_vector))
         for var in exported_vars_test_vector:

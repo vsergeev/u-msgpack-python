@@ -49,6 +49,11 @@ import datetime
 import sys
 import io
 
+if sys.version_info[0:2] >= (3, 3):
+    from collections.abc import Hashable
+else:
+    from collections import Hashable
+
 __version__ = "2.5.1"
 "Module version string"
 
@@ -835,7 +840,7 @@ def _unpack_map(code, fp, options):
         if isinstance(k, list):
             # Attempt to convert list into a hashable tuple
             k = _deep_list_to_tuple(k)
-        elif not isinstance(k, collections.Hashable):
+        elif not isinstance(k, Hashable):
             raise UnhashableKeyException(
                 "encountered unhashable key: %s, %s" % (str(k), str(type(k))))
         elif k in d:
