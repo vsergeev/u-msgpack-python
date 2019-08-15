@@ -1,3 +1,8 @@
+* Version 2.5.2 - 08/15/2019
+    * Fix DeprecationWarning about using ABCs from 'collections' on Python 3.7.
+    * Contributors
+        * Gabe Appleton, @gappleto97 - 5ece62a
+
 * Version 2.5.1 - 03/03/2019
     * Fix handling of naive/aware datetime objects when packing the timestamp extension type.
     * Add handling for short reads during file object unpacking.
