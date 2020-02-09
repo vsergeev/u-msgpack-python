@@ -868,7 +868,10 @@ def _unpack_map(code, fp, options):
 
 def _unpack(fp, options):
     getter = lambda x: getattr(x, 'type', getattr(x, 'code', float('NaN')))
-    auto_handlers = {getter(x): x._unpackb for x in _subclasses(Ext)}
+    auto_handlers = {}
+    for x in _subclasses(Ext):
+        if x.type not in auto_handlers:
+            auto_handlers[x.type] = x._unpackb
     if 'ext_handlers' in options:
         auto_handlers.update(options['ext_handlers'])
     options['ext_handlers'] = auto_handlers
