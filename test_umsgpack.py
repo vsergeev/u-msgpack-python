@@ -319,6 +319,12 @@ float_precision_test_vectors = [
     ["float precision double", 2.5, b"\xcb\x40\x04\x00\x00\x00\x00\x00\x00"],
 ]
 
+tuple_test_vectors = [
+    ["nested array", [0x01, [b"\x80", [[u"a", u"b", u"c"], True]]],
+        b"\x92\x01\x92\xc4\x01\x80\x92\x93\xa1a\xa1b\xa1c\xc3",
+        (0x01, (b"\x80", ((u"a", u"b", u"c"), True)))],
+]
+
 naive_timestamp_test_vectors = [
     ["32-bit timestamp (naive)", datetime.datetime(2000, 1, 1, 10, 5, 2, 0, umsgpack._utc_tzinfo),
         b"\xd6\xff\x38\x6d\xd1\x4e",
@@ -517,6 +523,19 @@ class TestUmsgpack(unittest.TestCase):
         unpacked = umsgpack.unpackb(data, use_ordered_dict=True)
         self.assertTrue(isinstance(unpacked, OrderedDict))
         self.assertEqual(unpacked, obj)
+
+    def test_unpack_tuple(self):
+        # Use tuple test vector
+        (_, obj, data, obj_tuple) = tuple_test_vectors[0]
+
+        # Unpack with default options (list)
+        self.assertEqual(umsgpack.unpackb(data), obj)
+
+        # Unpack with use_tuple=False (list)
+        self.assertEqual(umsgpack.unpackb(data, use_tuple=False), obj)
+
+        # Unpack with use_tuple=True (tuple)
+        self.assertEqual(umsgpack.unpackb(data, use_tuple=True), obj_tuple)
 
     def test_ext_exceptions(self):
         with self.assertRaises(TypeError):

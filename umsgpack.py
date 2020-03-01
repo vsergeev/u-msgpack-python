@@ -812,6 +812,9 @@ def _unpack_array(code, fp, options):
     else:
         raise Exception("logic error, not array: 0x%02x" % ord(code))
 
+    if options.get('use_tuple'):
+        return tuple((_unpack(fp, options) for i in xrange(length)))
+
     return [_unpack(fp, options) for i in xrange(length)]
 
 
@@ -878,6 +881,8 @@ def _unpack2(fp, **options):
                              Ext into an object
         use_ordered_dict (bool): unpack maps into OrderedDict, instead of
                                  unordered dict (default False)
+        use_tuple (bool): unpacks arrays into tuples, instead of lists (default
+                          False)
         allow_invalid_utf8 (bool): unpack invalid strings into instances of
                                    InvalidString, for access to the bytes
                                    (default False)
@@ -922,6 +927,8 @@ def _unpack3(fp, **options):
                              Ext into an object
         use_ordered_dict (bool): unpack maps into OrderedDict, instead of
                                  unordered dict (default False)
+        use_tuple (bool): unpacks arrays into tuples, instead of lists (default
+                          False)
         allow_invalid_utf8 (bool): unpack invalid strings into instances of
                                    InvalidString, for access to the bytes
                                    (default False)
@@ -967,6 +974,8 @@ def _unpackb2(s, **options):
                              Ext into an object
         use_ordered_dict (bool): unpack maps into OrderedDict, instead of
                                  unordered dict (default False)
+        use_tuple (bool): unpacks arrays into tuples, instead of lists (default
+                          False)
         allow_invalid_utf8 (bool): unpack invalid strings into instances of
                                    InvalidString, for access to the bytes
                                    (default False)
@@ -1015,6 +1024,8 @@ def _unpackb3(s, **options):
                              Ext into an object
         use_ordered_dict (bool): unpack maps into OrderedDict, instead of
                                  unordered dict (default False)
+        use_tuple (bool): unpacks arrays into tuples, instead of lists (default
+                          False)
         allow_invalid_utf8 (bool): unpack invalid strings into instances of
                                    InvalidString, for access to the bytes
                                    (default False)
