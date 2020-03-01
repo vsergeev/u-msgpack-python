@@ -225,6 +225,18 @@ OrderedDict([('compact', True), ('schema', 0)])
 >>> 
 ```
 
+## Tuples
+
+The unpacking functions provide a `use_tuple` option to unpack MessagePack arrays into tuples, rather than lists.
+
+``` python
+>>> umsgpack.unpackb(b'\x93\xa1a\xc3\x92\x01\x92\x02\x03')
+['a', True, [1, [2, 3]]]
+>>> umsgpack.unpackb(b'\x93\xa1a\xc3\x92\x01\x92\x02\x03', use_tuple=True)
+('a', True, (1, (2, 3)))
+>>> 
+```
+
 ### Invalid UTF-8 Strings
 
 The unpacking functions provide an `allow_invalid_utf8` option to unpack MessagePack strings with invalid UTF-8 into the `umsgpack.InvalidString` type, instead of throwing an exception. The `umsgpack.InvalidString` type is a subclass of `bytes`, and can be used like any other `bytes` object.
