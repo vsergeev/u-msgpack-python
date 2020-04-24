@@ -135,6 +135,43 @@ class Ext(object):
 class InvalidString(bytes):
     """Subclass of bytes to hold invalid UTF-8 strings."""
 
+
+##############################################################################
+# Ext Serializable Decorator
+##############################################################################
+
+_ext_classes = {}
+
+
+def ext_serializable(ext_type):
+    """
+    Return a decorator to register a class for automatic packing and unpacking
+    with the specified Ext type code. The application class should implement a
+    `packb()` method that returns serialized bytes, and an `unpackb()` class
+    method or static method that accepts serialized bytes and returns an
+    instance of the application class.
+
+    Args:
+        ext_type: application-defined Ext type code
+
+    Raises:
+        ValueError:
+            Ext type or class already registered.
+    """
+    def wrapper(cls):
+        if ext_type in _ext_classes:
+            raise ValueError("Ext type 0x{:02x} already registered with class {:s}".format(ext_type, repr(_ext_classes[ext_type])))
+        elif cls in _ext_classes:
+            raise ValueError("Class {:s} already registered with Ext type 0x{:02x}".format(repr(cls), ext_type))
+
+        _ext_classes[ext_type] = cls
+        _ext_classes[cls] = ext_type
+
+        return cls
+
+    return wrapper
+
+
 ##############################################################################
 # Exceptions
 ##############################################################################
@@ -435,6 +472,11 @@ def _pack2(obj, fp, **options):
         _pack_nil(obj, fp, options)
     elif ext_handlers and obj.__class__ in ext_handlers:
         _pack_ext(ext_handlers[obj.__class__](obj), fp, options)
+    elif obj.__class__ in _ext_classes:
+        try:
+            _pack_ext(Ext(_ext_classes[obj.__class__], obj.packb()), fp, options)
+        except AttributeError:
+            raise NotImplementedError("Ext serializable class {:s} is missing implementation of packb()".format(repr(obj.__class__)))
     elif isinstance(obj, bool):
         _pack_boolean(obj, fp, options)
     elif isinstance(obj, (int, long)):
@@ -507,6 +549,11 @@ def _pack3(obj, fp, **options):
         _pack_nil(obj, fp, options)
     elif ext_handlers and obj.__class__ in ext_handlers:
         _pack_ext(ext_handlers[obj.__class__](obj), fp, options)
+    elif obj.__class__ in _ext_classes:
+        try:
+            _pack_ext(Ext(_ext_classes[obj.__class__], obj.packb()), fp, options)
+        except AttributeError:
+            raise NotImplementedError("Ext serializable class {:s} is missing implementation of packb()".format(repr(obj.__class__)))
     elif isinstance(obj, bool):
         _pack_boolean(obj, fp, options)
     elif isinstance(obj, int):
@@ -750,6 +797,13 @@ def _unpack_ext(code, fp, options):
     ext_handlers = options.get("ext_handlers")
     if ext_handlers and ext_type in ext_handlers:
         return ext_handlers[ext_type](Ext(ext_type, ext_data))
+
+    # Unpack with ext classes, if type is registered
+    if ext_type in _ext_classes:
+        try:
+            return _ext_classes[ext_type].unpackb(ext_data)
+        except AttributeError:
+            raise NotImplementedError("Ext serializable class {:s} is missing implementation of unpackb()".format(repr(_ext_classes[ext_type])))
 
     # Timestamp extension
     if ext_type == -1:

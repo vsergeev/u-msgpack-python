@@ -383,6 +383,7 @@ exported_vars_test_vector = [
     "DuplicateKeyException",
     "KeyNotPrimitiveException",
     "KeyDuplicateException",
+    "ext_serializable",
     "pack",
     "packb",
     "unpack",
@@ -608,6 +609,68 @@ class TestUmsgpack(unittest.TestCase):
 
         unpacked = umsgpack.unpackb(data, ext_handlers=override_ext_handlers)
         self.assertEqual(unpacked, obj)
+
+    def test_ext_serializable(self):
+        # Register test class
+        @umsgpack.ext_serializable(0x20)
+        class CustomComplex:
+            def __init__(self, real, imag):
+                self.real = real
+                self.imag = imag
+
+            def __eq__(self, other):
+                return self.real == other.real and self.imag == other.imag
+
+            def packb(self):
+                return struct.pack("<II", self.real, self.imag)
+
+            @classmethod
+            def unpackb(cls, data):
+                return cls(*struct.unpack("<II", data))
+
+        obj, data = CustomComplex(123, 456), b"\xd7\x20\x7b\x00\x00\x00\xc8\x01\x00\x00"
+
+        # Test pack
+        packed = umsgpack.packb(obj)
+        self.assertEqual(packed, data)
+
+        # Test unpack
+        unpacked = umsgpack.unpackb(packed)
+        self.assertTrue(isinstance(unpacked, CustomComplex))
+        self.assertEqual(unpacked, obj)
+
+        _, obj, data = ext_handlers_test_vectors[0]
+
+        # Test pack priority of ext_handlers over ext_serializable()
+        packed = umsgpack.packb(obj, ext_handlers=ext_handlers)
+        self.assertEqual(packed, data)
+
+        # Test unpack priority of ext_handlers over ext_serializable()
+        unpacked = umsgpack.unpackb(data, ext_handlers=ext_handlers)
+        self.assertTrue(isinstance(unpacked, complex))
+        self.assertEqual(unpacked, obj)
+
+        # Test registration collision
+        with self.assertRaises(ValueError):
+            @umsgpack.ext_serializable(0x20)
+            class DummyClass:
+                pass
+
+        # Register class with missing packb() and unpackb()
+        @umsgpack.ext_serializable(0x21)
+        class IncompleteClass:
+            pass
+
+        # Test unimplemented packb()
+        with self.assertRaises(NotImplementedError):
+            umsgpack.packb(IncompleteClass())
+
+        # Test unimplemented unpackb()
+        with self.assertRaises(NotImplementedError):
+            umsgpack.unpackb(b"\xd4\x21\x00")
+
+        # Unregister Ext serializable classes for future tests
+        umsgpack._ext_classes = {}
 
     def test_streaming_writer(self):
         # Try first composite test vector
