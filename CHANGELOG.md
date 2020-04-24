@@ -1,3 +1,9 @@
+* Version 2.6.0 - 04/25/2020
+    * Add `use_tuple` option to unpacking functions for unpacking MessagePack arrays into tuples.
+    * Add `ext_serializable()` decorator for registration of application classes with Ext types for automatic packing and unpacking.
+    * Contributors
+        * Gabe Appleton, @gappleto97 - original idea behind 8aa0ee8 in https://github.com/vsergeev/u-msgpack-python/pull/37
+
 * Version 2.5.2 - 08/15/2019
     * Fix DeprecationWarning about using ABCs from 'collections' on Python 3.7.
     * Contributors
