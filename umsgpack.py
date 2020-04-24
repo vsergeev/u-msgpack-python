@@ -104,9 +104,8 @@ class Ext(object):
         """
         Compare this Ext object with another for equality.
         """
-        return (isinstance(other, self.__class__) and
-                self.type == other.type and
-                self.data == other.data)
+        return isinstance(other, self.__class__) \
+            and self.type == other.type and self.data == other.data
 
     def __ne__(self, other):
         """
@@ -330,14 +329,11 @@ def _pack_ext(obj, fp, options):
     elif obj_len == 16:
         fp.write(b"\xd8" + struct.pack("B", obj.type & 0xff) + obj.data)
     elif obj_len < 2**8:
-        fp.write(b"\xc7" +
-                 struct.pack("BB", obj_len, obj.type & 0xff) + obj.data)
+        fp.write(b"\xc7" + struct.pack("BB", obj_len, obj.type & 0xff) + obj.data)
     elif obj_len < 2**16:
-        fp.write(b"\xc8" +
-                 struct.pack(">HB", obj_len, obj.type & 0xff) + obj.data)
+        fp.write(b"\xc8" + struct.pack(">HB", obj_len, obj.type & 0xff) + obj.data)
     elif obj_len < 2**32:
-        fp.write(b"\xc9" +
-                 struct.pack(">IB", obj_len, obj.type & 0xff) + obj.data)
+        fp.write(b"\xc9" + struct.pack(">IB", obj_len, obj.type & 0xff) + obj.data)
     else:
         raise UnsupportedTypeException("huge ext data")
 
@@ -356,18 +352,14 @@ def _pack_ext_timestamp(obj, fp, options):
 
     if microseconds == 0 and 0 <= seconds <= 2**32 - 1:
         # 32-bit timestamp
-        fp.write(b"\xd6\xff" +
-                 struct.pack(">I", seconds))
+        fp.write(b"\xd6\xff" + struct.pack(">I", seconds))
     elif 0 <= seconds <= 2**34 - 1:
         # 64-bit timestamp
         value = ((microseconds * 1000) << 34) | seconds
-        fp.write(b"\xd7\xff" +
-                 struct.pack(">Q", value))
+        fp.write(b"\xd7\xff" + struct.pack(">Q", value))
     elif -2**63 <= abs(seconds) <= 2**63 - 1:
         # 96-bit timestamp
-        fp.write(b"\xc7\x0c\xff" +
-                 struct.pack(">I", microseconds * 1000) +
-                 struct.pack(">q", seconds))
+        fp.write(b"\xc7\x0c\xff" + struct.pack(">Iq", microseconds * 1000, seconds))
     else:
         raise UnsupportedTypeException("huge timestamp")
 
@@ -824,8 +816,7 @@ def _unpack_map(code, fp, options):
     else:
         raise Exception("logic error, not map: 0x%02x" % ord(code))
 
-    d = {} if not options.get('use_ordered_dict') \
-        else collections.OrderedDict()
+    d = {} if not options.get('use_ordered_dict') else collections.OrderedDict()
     for _ in xrange(length):
         # Unpack key
         k = _unpack(fp, options)
