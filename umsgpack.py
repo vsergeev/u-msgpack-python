@@ -135,7 +135,6 @@ class Ext(object):
 
 class InvalidString(bytes):
     """Subclass of bytes to hold invalid UTF-8 strings."""
-    pass
 
 ##############################################################################
 # Exceptions
@@ -145,39 +144,32 @@ class InvalidString(bytes):
 # Base Exception classes
 class PackException(Exception):
     "Base class for exceptions encountered during packing."
-    pass
 
 
 class UnpackException(Exception):
     "Base class for exceptions encountered during unpacking."
-    pass
 
 
 # Packing error
 class UnsupportedTypeException(PackException):
     "Object type not supported for packing."
-    pass
 
 
 # Unpacking error
 class InsufficientDataException(UnpackException):
     "Insufficient data to unpack the serialized object."
-    pass
 
 
 class InvalidStringException(UnpackException):
     "Invalid UTF-8 string encountered during unpacking."
-    pass
 
 
 class UnsupportedTimestampException(UnpackException):
     "Unsupported timestamp format encountered during unpacking."
-    pass
 
 
 class ReservedCodeException(UnpackException):
     "Reserved code encountered during unpacking."
-    pass
 
 
 class UnhashableKeyException(UnpackException):
@@ -185,12 +177,10 @@ class UnhashableKeyException(UnpackException):
     Unhashable key encountered during map unpacking.
     The serialized map cannot be deserialized into a Python dictionary.
     """
-    pass
 
 
 class DuplicateKeyException(UnpackException):
     "Duplicate key encountered during map unpacking."
-    pass
 
 
 # Backwards compatibility
