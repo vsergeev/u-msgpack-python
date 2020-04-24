@@ -79,6 +79,23 @@ b'\x01\x02\x03'
 >>> 
 ```
 
+Serializing and deserializing application-defined types with `ext_serializable()`:
+``` python
+>>> @umsgpack.ext_serializable(0x50)
+... class Point(collections.namedtuple('Point', ['x', 'y'])):
+...     def packb(self):
+...         return struct.pack(">ii", self.x, self.y)
+...     @staticmethod
+...     def unpackb(data):
+...         return Point(*struct.unpack(">ii", data))
+... 
+>>> umsgpack.packb(Point(1, 2))
+b'\xd7P\x00\x00\x00\x01\x00\x00\x00\x02'
+>>> umsgpack.unpackb(_)
+Point(x=1, y=2)
+>>> 
+```
+
 Serializing and deserializing application-defined types with Ext handlers:
 ``` python
 >>> umsgpack.packb([complex(1,2), decimal.Decimal("0.31")],
@@ -111,6 +128,45 @@ b'\x82\xa7compact\xc3\xa6schema\x00'
 >>> umsgpack.load(f)
 {u'compact': True, u'schema': 0}
 >>> 
+```
+
+## Ext Serializable
+
+The `ext_serializable()` decorator registers application classes for automatic
+packing and unpacking with the specified Ext type.  The decorator accepts the
+Ext type code as an argument. The application class should implement a
+`packb()` method that returns serialized bytes, and an `unpackb()` class method
+or static method that accepts serialized bytes and returns an instance of the
+application class.
+
+Example for registering, packing, and unpacking a custom class with Ext type
+code 0x10:
+
+``` python
+@umsgpack.ext_serializable(0x10)
+class Point(object):
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def __str__(self):
+        return "Point({}, {}, {})".format(self.x, self.y, self.z)
+
+    def packb(self):
+        return struct.pack(">iii", self.x, self.y, self.z)
+
+    @staticmethod
+    def unpackb(data):
+        return Point(*struct.unpack(">iii", data))
+
+# Pack
+obj = Point(1,2,3)
+data = umsgpack.packb(obj)
+
+# Unpack
+obj = umsgpack.unpackb(data)
+print(obj) # -> Point(1, 2, 3)
 ```
 
 ## Ext Handlers
@@ -301,6 +357,19 @@ If an error occurs during packing, umsgpack will raise an exception derived from
     >>> 
     ```
 
+* `NotImplementedError`: Ext serializable class is missing implementation of `packb()`.
+
+    ``` python
+    >>> @umsgpack.ext_serializable(0x50)
+    ... class Point(collections.namedtuple('Point', ['x', 'y'])):
+    ...   pass
+    ... 
+    >>> umsgpack.packb(Point(1, 2))
+    ...
+    NotImplementedError: Ext serializable class <class '__main__.Point'> is missing implementation of packb()
+    >>> 
+    ```
+
 ### Unpacking Exceptions
 
 If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a `TypeError` exception. If an error occurs during unpacking, umsgpack will raise an exception derived from `umsgpack.UnpackException`. All possible unpacking exceptions are described below.
@@ -399,6 +468,19 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
     >>> 
     ```
 
+* `NotImplementedError`: Ext serializable class is missing implementation of `unpackb()`.
+
+    ``` python
+    >>> @umsgpack.ext_serializable(0x50)
+    ... class Point(collections.namedtuple('Point', ['x', 'y'])):
+    ...   pass
+    ... 
+    >>> umsgpack.unpackb(b'\xd7\x50\x00\x00\x00\x01\x00\x00\x00\x02')
+    ...
+    NotImplementedError: Ext serializable class <class '__main__.Point'> is missing implementation of unpackb()
+    >>> 
+    ```
+
 ## Behavior Notes
 
 * Python 2
@@ -414,6 +496,7 @@ If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise a
 * The Python `datetime.datetime` type is packed into, and unpacked from, the msgpack `timestamp` format
     * Note that this Python type only supports microsecond resolution, while the msgpack `timestamp` format supports nanosecond resolution. Timestamps with finer than microsecond resolution will lose precision during unpacking. Users may override the packing and unpacking of the msgpack `timestamp` format with a custom type for alternate behavior.
     * Both naive and aware timestamp are supported. Naive timestamps are packed as if they are in the UTC timezone. Timestamps are always unpacked as aware `datetime.datetime` objects in the UTC timezone.
+* Ext type handlers specified in the optional `ext_handlers` dictionary will override `ext_serializable()` classes during packing and unpacking
 
 ## Testing
 

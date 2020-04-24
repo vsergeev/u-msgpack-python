@@ -80,6 +80,23 @@ b'\x01\x02\x03'
 >>> 
 ```
 
+Serializing and deserializing application-defined types with `ext_serializable()`:
+``` python
+>>> @umsgpack.ext_serializable(0x50)
+... class Point(collections.namedtuple('Point', ['x', 'y'])):
+...     def packb(self):
+...         return struct.pack(">ii", self.x, self.y)
+...     @staticmethod
+...     def unpackb(data):
+...         return Point(*struct.unpack(">ii", data))
+... 
+>>> umsgpack.packb(Point(1, 2))
+b'\xd7P\x00\x00\x00\x01\x00\x00\x00\x02'
+>>> umsgpack.unpackb(_)
+Point(x=1, y=2)
+>>> 
+```
+
 Serializing and deserializing application-defined types with Ext handlers:
 ``` python
 >>> umsgpack.packb([complex(1,2), decimal.Decimal("0.31")],
