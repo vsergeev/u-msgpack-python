@@ -746,39 +746,36 @@ def _unpack_ext(code, fp, options):
     ext_type = struct.unpack("b", _read_except(fp, 1))[0]
     ext_data = _read_except(fp, length)
 
-    # Create extension object
-    ext = Ext(ext_type, ext_data)
-
     # Unpack with ext handler, if we have one
     ext_handlers = options.get("ext_handlers")
-    if ext_handlers and ext.type in ext_handlers:
-        return ext_handlers[ext.type](ext)
+    if ext_handlers and ext_type in ext_handlers:
+        return ext_handlers[ext_type](Ext(ext_type, ext_data))
 
     # Timestamp extension
-    if ext.type == -1:
-        return _unpack_ext_timestamp(ext, options)
+    if ext_type == -1:
+        return _unpack_ext_timestamp(ext_data, options)
 
-    return ext
+    return Ext(ext_type, ext_data)
 
 
-def _unpack_ext_timestamp(ext, options):
-    obj_len = len(ext.data)
+def _unpack_ext_timestamp(ext_data, options):
+    obj_len = len(ext_data)
     if obj_len == 4:
         # 32-bit timestamp
-        seconds = struct.unpack(">I", ext.data)[0]
+        seconds = struct.unpack(">I", ext_data)[0]
         microseconds = 0
     elif obj_len == 8:
         # 64-bit timestamp
-        value = struct.unpack(">Q", ext.data)[0]
+        value = struct.unpack(">Q", ext_data)[0]
         seconds = value & 0x3ffffffff
         microseconds = (value >> 34) // 1000
     elif obj_len == 12:
         # 96-bit timestamp
-        seconds = struct.unpack(">q", ext.data[4:12])[0]
-        microseconds = struct.unpack(">I", ext.data[0:4])[0] // 1000
+        seconds = struct.unpack(">q", ext_data[4:12])[0]
+        microseconds = struct.unpack(">I", ext_data[0:4])[0] // 1000
     else:
         raise UnsupportedTimestampException(
-            "unsupported timestamp with data length %d" % len(ext.data))
+            "unsupported timestamp with data length %d" % len(ext_data))
 
     return _epoch + datetime.timedelta(seconds=seconds,
                                        microseconds=microseconds)
