@@ -140,7 +140,8 @@ class InvalidString(bytes):
 # Ext Serializable Decorator
 ##############################################################################
 
-_ext_classes = {}
+_ext_classes_to_code = {}
+_ext_codes_to_class = {}
 
 
 def ext_serializable(ext_type):
@@ -159,13 +160,13 @@ def ext_serializable(ext_type):
             Ext type or class already registered.
     """
     def wrapper(cls):
-        if ext_type in _ext_classes:
-            raise ValueError("Ext type 0x{:02x} already registered with class {:s}".format(ext_type, repr(_ext_classes[ext_type])))
-        elif cls in _ext_classes:
+        if ext_type in _ext_codes_to_class:
+            raise ValueError("Ext type 0x{:02x} already registered with class {:s}".format(ext_type, repr(_ext_codes_to_class[ext_type])))
+        elif cls in _ext_classes_to_code:
             raise ValueError("Class {:s} already registered with Ext type 0x{:02x}".format(repr(cls), ext_type))
 
-        _ext_classes[ext_type] = cls
-        _ext_classes[cls] = ext_type
+        _ext_codes_to_class[ext_type] = cls
+        _ext_classes_to_code[cls] = ext_type
 
         return cls
 
@@ -472,11 +473,19 @@ def _pack2(obj, fp, **options):
         _pack_nil(obj, fp, options)
     elif ext_handlers and obj.__class__ in ext_handlers:
         _pack_ext(ext_handlers[obj.__class__](obj), fp, options)
-    elif obj.__class__ in _ext_classes:
+    elif obj.__class__ in _ext_classes_to_code:
         try:
-            _pack_ext(Ext(_ext_classes[obj.__class__], obj.packb()), fp, options)
+            _pack_ext(Ext(_ext_classes_to_code[obj.__class__], obj.packb()), fp, options)
         except AttributeError:
             raise NotImplementedError("Ext serializable class {:s} is missing implementation of packb()".format(repr(obj.__class__)))
+    elif isinstance(obj, tuple(_ext_classes_to_code)):
+        for cls in _ext_classes_to_code:
+            if isinstance(obj, cls):
+                try:
+                    _pack_ext(Ext(_ext_classes_to_code[cls], obj.packb()), fp, options)
+                    break
+                except AttributeError:
+                    raise NotImplementedError("Ext serializable class {:s} is missing implementation of packb()".format(repr(cls)))
     elif isinstance(obj, bool):
         _pack_boolean(obj, fp, options)
     elif isinstance(obj, (int, long)):
@@ -549,11 +558,19 @@ def _pack3(obj, fp, **options):
         _pack_nil(obj, fp, options)
     elif ext_handlers and obj.__class__ in ext_handlers:
         _pack_ext(ext_handlers[obj.__class__](obj), fp, options)
-    elif obj.__class__ in _ext_classes:
+    elif obj.__class__ in _ext_classes_to_code:
         try:
-            _pack_ext(Ext(_ext_classes[obj.__class__], obj.packb()), fp, options)
+            _pack_ext(Ext(_ext_classes_to_code[obj.__class__], obj.packb()), fp, options)
         except AttributeError:
             raise NotImplementedError("Ext serializable class {:s} is missing implementation of packb()".format(repr(obj.__class__)))
+    elif isinstance(obj, tuple(_ext_classes_to_code)):
+        for cls in _ext_classes_to_code:
+            if isinstance(obj, cls):
+                try:
+                    _pack_ext(Ext(_ext_classes_to_code[cls], obj.packb()), fp, options)
+                    break
+                except AttributeError:
+                    raise NotImplementedError("Ext serializable class {:s} is missing implementation of packb()".format(repr(cls)))
     elif isinstance(obj, bool):
         _pack_boolean(obj, fp, options)
     elif isinstance(obj, int):
@@ -799,11 +816,11 @@ def _unpack_ext(code, fp, options):
         return ext_handlers[ext_type](Ext(ext_type, ext_data))
 
     # Unpack with ext classes, if type is registered
-    if ext_type in _ext_classes:
+    if ext_type in _ext_codes_to_class:
         try:
-            return _ext_classes[ext_type].unpackb(ext_data)
+            return _ext_codes_to_class[ext_type].unpackb(ext_data)
         except AttributeError:
-            raise NotImplementedError("Ext serializable class {:s} is missing implementation of unpackb()".format(repr(_ext_classes[ext_type])))
+            raise NotImplementedError("Ext serializable class {:s} is missing implementation of unpackb()".format(repr(_ext_codes_to_class[ext_type])))
 
     # Timestamp extension
     if ext_type == -1:
