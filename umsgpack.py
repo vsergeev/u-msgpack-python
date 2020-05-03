@@ -161,7 +161,7 @@ def ext_serializable(ext_type):
     """
     def wrapper(cls):
         if ext_type in _ext_codes_to_class:
-            raise ValueError("Ext type 0x{:02x} already registered with class {:s}".format(ext_type, repr(_ext_classes[ext_type])))
+            raise ValueError("Ext type 0x{:02x} already registered with class {:s}".format(ext_type, repr(_ext_codes_to_class[ext_type])))
         elif cls in _ext_classes_to_code:
             raise ValueError("Class {:s} already registered with Ext type 0x{:02x}".format(repr(cls), ext_type))
 
@@ -820,7 +820,7 @@ def _unpack_ext(code, fp, options):
         try:
             return _ext_codes_to_class[ext_type].unpackb(ext_data)
         except AttributeError:
-            raise NotImplementedError("Ext serializable class {:s} is missing implementation of unpackb()".format(repr(_ext_classes[ext_type])))
+            raise NotImplementedError("Ext serializable class {:s} is missing implementation of unpackb()".format(repr(_ext_codes_to_class[ext_type])))
 
     # Timestamp extension
     if ext_type == -1:
