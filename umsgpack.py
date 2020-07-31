@@ -478,16 +478,6 @@ def _pack2(obj, fp, **options):
             _pack_ext(Ext(_ext_class_to_type[obj.__class__], obj.packb()), fp, options)
         except AttributeError:
             raise NotImplementedError("Ext serializable class {:s} is missing implementation of packb()".format(repr(obj.__class__)))
-    elif _ext_class_to_type:
-        # Linear search for superclass
-        t = next((t for t in _ext_class_to_type if isinstance(obj, t)), None)
-        if t:
-            try:
-                _pack_ext(Ext(_ext_class_to_type[t], obj.packb()), fp, options)
-            except AttributeError:
-                raise NotImplementedError("Ext serializable class {:s} is missing implementation of packb()".format(repr(t)))
-        else:
-            raise UnsupportedTypeException("unsupported type: %s" % str(type(obj)))
     elif isinstance(obj, bool):
         _pack_boolean(obj, fp, options)
     elif isinstance(obj, (int, long)):
@@ -518,6 +508,16 @@ def _pack2(obj, fp, **options):
         else:
             raise UnsupportedTypeException(
                 "unsupported type: %s" % str(type(obj)))
+    elif _ext_class_to_type:
+        # Linear search for superclass
+        t = next((t for t in _ext_class_to_type if isinstance(obj, t)), None)
+        if t:
+            try:
+                _pack_ext(Ext(_ext_class_to_type[t], obj.packb()), fp, options)
+            except AttributeError:
+                raise NotImplementedError("Ext serializable class {:s} is missing implementation of packb()".format(repr(t)))
+        else:
+            raise UnsupportedTypeException("unsupported type: %s" % str(type(obj)))
     else:
         raise UnsupportedTypeException("unsupported type: %s" % str(type(obj)))
 
@@ -565,16 +565,6 @@ def _pack3(obj, fp, **options):
             _pack_ext(Ext(_ext_class_to_type[obj.__class__], obj.packb()), fp, options)
         except AttributeError:
             raise NotImplementedError("Ext serializable class {:s} is missing implementation of packb()".format(repr(obj.__class__)))
-    elif _ext_class_to_type:
-        # Linear search for superclass
-        t = next((t for t in _ext_class_to_type if isinstance(obj, t)), None)
-        if t:
-            try:
-                _pack_ext(Ext(_ext_class_to_type[t], obj.packb()), fp, options)
-            except AttributeError:
-                raise NotImplementedError("Ext serializable class {:s} is missing implementation of packb()".format(repr(t)))
-        else:
-            raise UnsupportedTypeException("unsupported type: %s" % str(type(obj)))
     elif isinstance(obj, bool):
         _pack_boolean(obj, fp, options)
     elif isinstance(obj, int):
@@ -605,6 +595,16 @@ def _pack3(obj, fp, **options):
         else:
             raise UnsupportedTypeException(
                 "unsupported type: %s" % str(type(obj)))
+    elif _ext_class_to_type:
+        # Linear search for superclass
+        t = next((t for t in _ext_class_to_type if isinstance(obj, t)), None)
+        if t:
+            try:
+                _pack_ext(Ext(_ext_class_to_type[t], obj.packb()), fp, options)
+            except AttributeError:
+                raise NotImplementedError("Ext serializable class {:s} is missing implementation of packb()".format(repr(t)))
+        else:
+            raise UnsupportedTypeException("unsupported type: %s" % str(type(obj)))
     else:
         raise UnsupportedTypeException(
             "unsupported type: %s" % str(type(obj)))
