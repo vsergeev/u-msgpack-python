@@ -669,8 +669,10 @@ class TestUmsgpack(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             umsgpack.unpackb(b"\xd4\x21\x00")
 
-        # Unregister Ext serializable classes for future tests
-        umsgpack._ext_classes = {}
+        # Unregister Ext serializable classes to prevent interference with
+        # subsequent tests
+        umsgpack._ext_classes_to_code = {}
+        umsgpack._ext_code_to_classes = {}
 
     def test_streaming_writer(self):
         # Try first composite test vector
