@@ -699,6 +699,40 @@ class TestUmsgpack(unittest.TestCase):
         umsgpack._ext_classes_to_code = {}
         umsgpack._ext_code_to_classes = {}
 
+    def test_ext_serializable_subclass(self):
+        @umsgpack.ext_serializable(0x10)
+        class Rectangle:
+            def __init__(self, length, width):
+                self.length = length
+                self.width = width
+
+            def __eq__(self, other):
+                return self.length == other.length and self.width == other.width
+
+            def packb(self):
+                return umsgpack.packb([self.length, self.width])
+
+            @classmethod
+            def unpackb(cls, data):
+                return cls(*umsgpack.unpackb(data))
+
+        class Square(Rectangle):
+            def __init__(self, width):
+                Rectangle.__init__(self, width, width)
+
+        # Test pack (packs base class)
+        packed = umsgpack.packb(Square(5))
+        self.assertEqual(packed, b"\xc7\x03\x10\x92\x05\x05")
+
+        # Test unpack (unpacks base class)
+        unpacked = umsgpack.unpackb(packed)
+        self.assertEqual(unpacked, Rectangle(5, 5))
+
+        # Unregister Ext serializable classes to prevent interference with
+        # subsequent tests
+        umsgpack._ext_classes_to_code = {}
+        umsgpack._ext_code_to_classes = {}
+
     def test_streaming_writer(self):
         # Try first composite test vector
         (_, obj, data) = composite_test_vectors[0]
