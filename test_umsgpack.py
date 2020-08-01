@@ -610,6 +610,31 @@ class TestUmsgpack(unittest.TestCase):
         unpacked = umsgpack.unpackb(data, ext_handlers=override_ext_handlers)
         self.assertEqual(unpacked, obj)
 
+    def test_ext_handlers_subclass(self):
+        class Rectangle:
+            def __init__(self, length, width):
+                self.length = length
+                self.width = width
+
+            def __eq__(self, other):
+                return self.length == other.length and self.width == other.width
+
+        class Square(Rectangle):
+            def __init__(self, width):
+                Rectangle.__init__(self, width, width)
+
+        # Test pack (packs base class)
+        packed = umsgpack.packb(Square(5), ext_handlers={
+            Rectangle: lambda obj: umsgpack.Ext(0x10, umsgpack.packb([obj.length, obj.width])),
+        })
+        self.assertEqual(packed, b"\xc7\x03\x10\x92\x05\x05")
+
+        # Test unpack (unpacks base class)
+        unpacked = umsgpack.unpackb(packed, ext_handlers={
+            0x10: lambda ext: Rectangle(*umsgpack.unpackb(ext.data)),
+        })
+        self.assertEqual(unpacked, Rectangle(5, 5))
+
     def test_ext_serializable(self):
         # Register test class
         @umsgpack.ext_serializable(0x20)
