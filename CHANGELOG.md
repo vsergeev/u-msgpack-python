@@ -1,3 +1,8 @@
+* Version 2.7.0 - 08/01/2020
+    * Add support for packing subclasses of `ext_serializable()` application classes.
+    * Contributors
+        * Gabe Appleton, @gappleto97 - 620f6ef
+
 * Version 2.6.0 - 04/25/2020
     * Add `use_tuple` option to unpacking functions for unpacking MessagePack arrays into tuples.
     * Add `ext_serializable()` decorator for registration of application classes with Ext types for automatic packing and unpacking.
