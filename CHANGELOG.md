@@ -1,3 +1,7 @@
+* Version 2.7.1 - 10/24/2020
+    * Add Ext type value validation to Ext class and `ext_serializable()` decorator.
+    * Change string formatting from `%` to `.format()` throughout codebase.
+
 * Version 2.7.0 - 08/01/2020
     * Add support for packing subclasses of `ext_serializable()` application classes.
     * Contributors
