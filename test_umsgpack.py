@@ -404,24 +404,24 @@ class TestUmsgpack(unittest.TestCase):
     def test_pack_single(self):
         for (name, obj, data) in single_test_vectors:
             obj_repr = repr(obj)
-            print("\tTesting %s: object %s" %
-                  (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+            print("\tTesting {:s}: object {:s}".format(
+                  name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
 
             self.assertEqual(umsgpack.packb(obj), data)
 
     def test_pack_composite(self):
         for (name, obj, data) in composite_test_vectors:
             obj_repr = repr(obj)
-            print("\tTesting %s: object %s" %
-                  (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+            print("\tTesting {:s}: object {:s}".format(
+                  name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
 
             self.assertEqual(umsgpack.packb(obj), data)
 
     def test_pack_exceptions(self):
         for (name, obj, exception) in pack_exception_test_vectors:
             obj_repr = repr(obj)
-            print("\tTesting %s: object %s" %
-                  (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+            print("\tTesting {:s}: object {:s}".format(
+                  name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
 
             with self.assertRaises(exception):
                 umsgpack.packb(obj)
@@ -429,8 +429,8 @@ class TestUmsgpack(unittest.TestCase):
     def test_unpack_single(self):
         for (name, obj, data) in single_test_vectors:
             obj_repr = repr(obj)
-            print("\tTesting %s: object %s" %
-                  (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+            print("\tTesting {:s}: object {:s}".format(
+                  name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
 
             unpacked = umsgpack.unpackb(data)
 
@@ -452,14 +452,14 @@ class TestUmsgpack(unittest.TestCase):
     def test_unpack_composite(self):
         for (name, obj, data) in composite_test_vectors:
             obj_repr = repr(obj)
-            print("\tTesting %s: object %s" %
-                  (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+            print("\tTesting {:s}: object {:s}".format(
+                  name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
 
             self.assertEqual(umsgpack.unpackb(data), obj)
 
     def test_unpack_exceptions(self):
         for (name, data, exception) in unpack_exception_test_vectors:
-            print("\tTesting %s" % name)
+            print("\tTesting {:s}".format(name))
 
             with self.assertRaises(exception):
                 umsgpack.unpackb(data)
@@ -469,8 +469,8 @@ class TestUmsgpack(unittest.TestCase):
 
         for (name, obj, data) in compatibility_test_vectors:
             obj_repr = repr(obj)
-            print("\tTesting %s: object %s" %
-                  (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+            print("\tTesting {:s}: object {:s}".format(
+                  name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
 
             self.assertEqual(umsgpack.packb(obj), data)
 
@@ -481,8 +481,8 @@ class TestUmsgpack(unittest.TestCase):
 
         for (name, obj, data) in compatibility_test_vectors:
             obj_repr = repr(obj)
-            print("\tTesting %s: object %s" %
-                  (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+            print("\tTesting {:s}: object {:s}".format(
+                  name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
 
             unpacked = umsgpack.unpackb(data)
 
@@ -556,8 +556,8 @@ class TestUmsgpack(unittest.TestCase):
     def test_pack_ext_handler(self):
         for (name, obj, data) in ext_handlers_test_vectors:
             obj_repr = repr(obj)
-            print("\tTesting %s: object %s" %
-                  (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+            print("\tTesting {:s}: object {:s}".format(
+                  name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
 
             packed = umsgpack.packb(obj, ext_handlers=ext_handlers)
             self.assertEqual(packed, data)
@@ -565,8 +565,8 @@ class TestUmsgpack(unittest.TestCase):
     def test_unpack_ext_handler(self):
         for (name, obj, data) in ext_handlers_test_vectors:
             obj_repr = repr(obj)
-            print("\tTesting %s: object %s" %
-                  (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+            print("\tTesting {:s}: object {:s}".format(
+                  name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
 
             unpacked = umsgpack.unpackb(data, ext_handlers=ext_handlers)
             self.assertEqual(unpacked, obj)
@@ -574,8 +574,8 @@ class TestUmsgpack(unittest.TestCase):
     def test_pack_force_float_precision(self):
         for ((name, obj, data), precision) in zip(float_precision_test_vectors, ["single", "double"]):
             obj_repr = repr(obj)
-            print("\tTesting %s: object %s" %
-                  (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+            print("\tTesting {:s}: object {:s}".format(
+                  name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
 
             packed = umsgpack.packb(obj, force_float_precision=precision)
             self.assertEqual(packed, data)
@@ -583,8 +583,8 @@ class TestUmsgpack(unittest.TestCase):
     def test_pack_naive_timestamp(self):
         for (name, obj, data, _) in naive_timestamp_test_vectors:
             obj_repr = repr(obj)
-            print("\t Testing %s: object %s" %
-                  (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+            print("\tTesting {:s}: object {:s}".format(
+                  name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
 
             packed = umsgpack.packb(obj)
             self.assertEqual(packed, data)
@@ -592,8 +592,8 @@ class TestUmsgpack(unittest.TestCase):
     def test_unpack_naive_timestamp(self):
         for (name, _, data, obj) in naive_timestamp_test_vectors:
             obj_repr = repr(obj)
-            print("\t Testing %s: object %s" %
-                  (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+            print("\tTesting {:s}: object {:s}".format(
+                  name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
 
             unpacked = umsgpack.unpackb(data)
             self.assertEqual(unpacked, obj)
@@ -602,8 +602,8 @@ class TestUmsgpack(unittest.TestCase):
         # Test overridden packing of datetime.datetime
         (name, obj, data) = override_ext_handlers_test_vectors[0]
         obj_repr = repr(obj)
-        print("\tTesting %s: object %s" %
-              (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+        print("\tTesting {:s}: object {:s}".format(
+              name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
 
         packed = umsgpack.packb(obj, ext_handlers=override_ext_handlers)
         self.assertEqual(packed, data)
@@ -612,8 +612,8 @@ class TestUmsgpack(unittest.TestCase):
         # Test overridden unpacking of Ext type -1
         (name, obj, data) = override_ext_handlers_test_vectors[1]
         obj_repr = repr(obj)
-        print("\tTesting %s: object %s" %
-              (name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
+        print("\tTesting {:s}: object {:s}".format(
+              name, obj_repr if len(obj_repr) < 24 else obj_repr[0:24] + "..."))
 
         unpacked = umsgpack.unpackb(data, ext_handlers=override_ext_handlers)
         self.assertEqual(unpacked, obj)
