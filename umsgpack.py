@@ -80,6 +80,13 @@ class Ext(object):
             type: application-defined type integer
             data: application-defined data byte array
 
+        TypeError:
+            Type is not an integer.
+        ValueError:
+            Type is out of range of -128 to 127.
+        TypeError::
+            Data is not type 'bytes' (Python 3) or not type 'str' (Python 2).
+
         Example:
         >>> foo = umsgpack.Ext(5, b"\x01\x02\x03")
         >>> umsgpack.packb({u"special stuff": foo, u"awesome": True})
@@ -89,14 +96,17 @@ class Ext(object):
         Ext Object (Type: 5, Data: 01 02 03)
         >>>
         """
-        # Check type is type int
+        # Check type is type int and in range
         if not isinstance(type, int):
             raise TypeError("ext type is not type integer")
-        # Check data is type bytes
+        elif not (-2**7 <= type <= 2**7 - 1):
+            raise ValueError("ext type value {:d} is out of range (-128 to 127)".format(type))
+        # Check data is type bytes or str
         elif sys.version_info[0] == 3 and not isinstance(data, bytes):
             raise TypeError("ext data is not type \'bytes\'")
         elif sys.version_info[0] == 2 and not isinstance(data, str):
             raise TypeError("ext data is not type \'str\'")
+
         self.type = type
         self.data = data
 
@@ -156,11 +166,19 @@ def ext_serializable(ext_type):
         ext_type: application-defined Ext type code
 
     Raises:
+        TypeError:
+            Ext type is not an integer.
+        ValueError:
+            Ext type is out of range of -128 to 127.
         ValueError:
             Ext type or class already registered.
     """
     def wrapper(cls):
-        if ext_type in _ext_type_to_class:
+        if not isinstance(ext_type, int):
+            raise TypeError("Ext type is not type integer")
+        elif not (-2**7 <= ext_type <= 2**7 - 1):
+            raise ValueError("Ext type value {:d} is out of range of -128 to 127".format(ext_type))
+        elif ext_type in _ext_type_to_class:
             raise ValueError("Ext type {:d} already registered with class {:s}".format(ext_type, repr(_ext_type_to_class[ext_type])))
         elif cls in _ext_class_to_type:
             raise ValueError("Class {:s} already registered with Ext type {:d}".format(repr(cls), ext_type))

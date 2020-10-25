@@ -539,11 +539,19 @@ class TestUmsgpack(unittest.TestCase):
         self.assertEqual(umsgpack.unpackb(data, use_tuple=True), obj_tuple)
 
     def test_ext_exceptions(self):
+        # Test invalid Ext type type
         with self.assertRaises(TypeError):
             _ = umsgpack.Ext(5.0, b"")
 
+        # Test invalid data type
         with self.assertRaises(TypeError):
             _ = umsgpack.Ext(0, u"unicode string")
+
+        # Test out of range Ext type value
+        with self.assertRaises(ValueError):
+            _ = umsgpack.Ext(-129, b"data")
+        with self.assertRaises(ValueError):
+            _ = umsgpack.Ext(128, b"data")
 
     def test_pack_ext_handler(self):
         for (name, obj, data) in ext_handlers_test_vectors:
@@ -679,6 +687,16 @@ class TestUmsgpack(unittest.TestCase):
         with self.assertRaises(ValueError):
             @umsgpack.ext_serializable(0x20)
             class DummyClass:
+                pass
+
+        # Test out of range Ext type value
+        with self.assertRaises(ValueError):
+            @umsgpack.ext_serializable(-129)
+            class DummyClass2:
+                pass
+        with self.assertRaises(ValueError):
+            @umsgpack.ext_serializable(128)
+            class DummyClass3:
                 pass
 
         # Register class with missing packb() and unpackb()
