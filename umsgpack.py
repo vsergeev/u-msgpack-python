@@ -127,8 +127,8 @@ class Ext(object):
         """
         String representation of this Ext object.
         """
-        s = "Ext Object (Type: %d, Data: " % self.type
-        s += " ".join(["0x%02x" % ord(self.data[i:i + 1])
+        s = "Ext Object (Type: {:d}, Data: ".format(self.type)
+        s += " ".join(["0x{:02}".format(ord(self.data[i:i + 1]))
                        for i in xrange(min(len(self.data), 8))])
         if len(self.data) > 8:
             s += " ..."
