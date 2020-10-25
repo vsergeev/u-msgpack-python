@@ -81,12 +81,12 @@ class Ext(object):
             data: application-defined data byte array
 
         Example:
-        >>> foo = umsgpack.Ext(0x05, b"\x01\x02\x03")
+        >>> foo = umsgpack.Ext(5, b"\x01\x02\x03")
         >>> umsgpack.packb({u"special stuff": foo, u"awesome": True})
         '\x82\xa7awesome\xc3\xadspecial stuff\xc7\x03\x05\x01\x02\x03'
         >>> bar = umsgpack.unpackb(_)
         >>> print(bar["special stuff"])
-        Ext Object (Type: 0x05, Data: 01 02 03)
+        Ext Object (Type: 5, Data: 01 02 03)
         >>>
         """
         # Check type is type int
@@ -117,7 +117,7 @@ class Ext(object):
         """
         String representation of this Ext object.
         """
-        s = "Ext Object (Type: 0x%02x, Data: " % self.type
+        s = "Ext Object (Type: %d, Data: " % self.type
         s += " ".join(["0x%02x" % ord(self.data[i:i + 1])
                        for i in xrange(min(len(self.data), 8))])
         if len(self.data) > 8:
@@ -161,9 +161,9 @@ def ext_serializable(ext_type):
     """
     def wrapper(cls):
         if ext_type in _ext_type_to_class:
-            raise ValueError("Ext type 0x{:02x} already registered with class {:s}".format(ext_type, repr(_ext_type_to_class[ext_type])))
+            raise ValueError("Ext type {:d} already registered with class {:s}".format(ext_type, repr(_ext_type_to_class[ext_type])))
         elif cls in _ext_class_to_type:
-            raise ValueError("Class {:s} already registered with Ext type 0x{:02x}".format(repr(cls), ext_type))
+            raise ValueError("Class {:s} already registered with Ext type {:d}".format(repr(cls), ext_type))
 
         _ext_type_to_class[ext_type] = cls
         _ext_class_to_type[cls] = ext_type
