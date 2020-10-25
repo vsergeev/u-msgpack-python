@@ -766,11 +766,10 @@ class TestUmsgpack(unittest.TestCase):
 
     def test_namespacing(self):
         # Get a list of global variables from umsgpack module
-        exported_vars = list(filter(lambda x: not x.startswith("_"),
-                                    dir(umsgpack)))
+        exported_vars = list([x for x in dir(umsgpack) if not x.startswith("_")])
         # Ignore imports
-        exported_vars = list(filter(lambda x: x != "struct" and x != "collections" and x != "datetime" and x !=
-                                    "sys" and x != "io" and x != "xrange" and x != "Hashable", exported_vars))
+        exported_vars = list([x for x in exported_vars if x != "struct" and x != "collections" and x != "datetime" and x !=
+                                    "sys" and x != "io" and x != "xrange" and x != "Hashable"])
 
         self.assertTrue(len(exported_vars) == len(exported_vars_test_vector))
         for var in exported_vars_test_vector:
