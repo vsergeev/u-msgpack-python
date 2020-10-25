@@ -525,7 +525,7 @@ def _pack2(obj, fp, **options):
             _pack_ext(ext_handlers[t](obj), fp, options)
         else:
             raise UnsupportedTypeException(
-                "unsupported type: %s" % str(type(obj)))
+                "unsupported type: {:s}".format(str(type(obj))))
     elif _ext_class_to_type:
         # Linear search for superclass
         t = next((t for t in _ext_class_to_type if isinstance(obj, t)), None)
@@ -535,9 +535,9 @@ def _pack2(obj, fp, **options):
             except AttributeError:
                 raise NotImplementedError("Ext serializable class {:s} is missing implementation of packb()".format(repr(t)))
         else:
-            raise UnsupportedTypeException("unsupported type: %s" % str(type(obj)))
+            raise UnsupportedTypeException("unsupported type: {:s}".format(str(type(obj))))
     else:
-        raise UnsupportedTypeException("unsupported type: %s" % str(type(obj)))
+        raise UnsupportedTypeException("unsupported type: {:s}".format(str(type(obj))))
 
 
 # Pack for Python 3, with unicode 'str' type, 'bytes' type, and no 'long' type
@@ -612,7 +612,7 @@ def _pack3(obj, fp, **options):
             _pack_ext(ext_handlers[t](obj), fp, options)
         else:
             raise UnsupportedTypeException(
-                "unsupported type: %s" % str(type(obj)))
+                "unsupported type: {:s}".format(str(type(obj))))
     elif _ext_class_to_type:
         # Linear search for superclass
         t = next((t for t in _ext_class_to_type if isinstance(obj, t)), None)
@@ -622,10 +622,10 @@ def _pack3(obj, fp, **options):
             except AttributeError:
                 raise NotImplementedError("Ext serializable class {:s} is missing implementation of packb()".format(repr(t)))
         else:
-            raise UnsupportedTypeException("unsupported type: %s" % str(type(obj)))
+            raise UnsupportedTypeException("unsupported type: {:s}".format(str(type(obj))))
     else:
         raise UnsupportedTypeException(
-            "unsupported type: %s" % str(type(obj)))
+            "unsupported type: {:s}".format(str(type(obj))))
 
 
 def _packb2(obj, **options):
@@ -737,21 +737,21 @@ def _unpack_integer(code, fp, options):
         return struct.unpack(">I", _read_except(fp, 4))[0]
     elif code == b'\xcf':
         return struct.unpack(">Q", _read_except(fp, 8))[0]
-    raise Exception("logic error, not int: 0x%02x" % ord(code))
+    raise Exception("logic error, not int: 0x{:02x}".format(ord(code)))
 
 
 def _unpack_reserved(code, fp, options):
     if code == b'\xc1':
         raise ReservedCodeException(
-            "encountered reserved code: 0x%02x" % ord(code))
+            "encountered reserved code: 0x{:02x}".format(ord(code)))
     raise Exception(
-        "logic error, not reserved code: 0x%02x" % ord(code))
+        "logic error, not reserved code: 0x{:02x}".format(ord(code)))
 
 
 def _unpack_nil(code, fp, options):
     if code == b'\xc0':
         return None
-    raise Exception("logic error, not nil: 0x%02x" % ord(code))
+    raise Exception("logic error, not nil: 0x{:02x}".format(ord(code)))
 
 
 def _unpack_boolean(code, fp, options):
@@ -759,7 +759,7 @@ def _unpack_boolean(code, fp, options):
         return False
     elif code == b'\xc3':
         return True
-    raise Exception("logic error, not boolean: 0x%02x" % ord(code))
+    raise Exception("logic error, not boolean: 0x{:02x}".format(ord(code)))
 
 
 def _unpack_float(code, fp, options):
@@ -767,7 +767,7 @@ def _unpack_float(code, fp, options):
         return struct.unpack(">f", _read_except(fp, 4))[0]
     elif code == b'\xcb':
         return struct.unpack(">d", _read_except(fp, 8))[0]
-    raise Exception("logic error, not float: 0x%02x" % ord(code))
+    raise Exception("logic error, not float: 0x{:02x}".format(ord(code)))
 
 
 def _unpack_string(code, fp, options):
@@ -780,7 +780,7 @@ def _unpack_string(code, fp, options):
     elif code == b'\xdb':
         length = struct.unpack(">I", _read_except(fp, 4))[0]
     else:
-        raise Exception("logic error, not string: 0x%02x" % ord(code))
+        raise Exception("logic error, not string: 0x{:02x}".format(ord(code)))
 
     # Always return raw bytes in compatibility mode
     global compatibility
@@ -804,7 +804,7 @@ def _unpack_binary(code, fp, options):
     elif code == b'\xc6':
         length = struct.unpack(">I", _read_except(fp, 4))[0]
     else:
-        raise Exception("logic error, not binary: 0x%02x" % ord(code))
+        raise Exception("logic error, not binary: 0x{:02x}".format(ord(code)))
 
     return _read_except(fp, length)
 
@@ -827,7 +827,7 @@ def _unpack_ext(code, fp, options):
     elif code == b'\xc9':
         length = struct.unpack(">I", _read_except(fp, 4))[0]
     else:
-        raise Exception("logic error, not ext: 0x%02x" % ord(code))
+        raise Exception("logic error, not ext: 0x{:02x}".format(ord(code)))
 
     ext_type = struct.unpack("b", _read_except(fp, 1))[0]
     ext_data = _read_except(fp, length)
@@ -868,7 +868,7 @@ def _unpack_ext_timestamp(ext_data, options):
         microseconds = struct.unpack(">I", ext_data[0:4])[0] // 1000
     else:
         raise UnsupportedTimestampException(
-            "unsupported timestamp with data length %d" % len(ext_data))
+            "unsupported timestamp with data length {:d}".format(len(ext_data)))
 
     return _epoch + datetime.timedelta(seconds=seconds,
                                        microseconds=microseconds)
@@ -882,7 +882,7 @@ def _unpack_array(code, fp, options):
     elif code == b'\xdd':
         length = struct.unpack(">I", _read_except(fp, 4))[0]
     else:
-        raise Exception("logic error, not array: 0x%02x" % ord(code))
+        raise Exception("logic error, not array: 0x{:02x}".format(ord(code)))
 
     if options.get('use_tuple'):
         return tuple((_unpack(fp, options) for i in xrange(length)))
@@ -904,7 +904,7 @@ def _unpack_map(code, fp, options):
     elif code == b'\xdf':
         length = struct.unpack(">I", _read_except(fp, 4))[0]
     else:
-        raise Exception("logic error, not map: 0x%02x" % ord(code))
+        raise Exception("logic error, not map: 0x{:02x}".format(ord(code)))
 
     d = {} if not options.get('use_ordered_dict') else collections.OrderedDict()
     for _ in xrange(length):
@@ -916,10 +916,10 @@ def _unpack_map(code, fp, options):
             k = _deep_list_to_tuple(k)
         elif not isinstance(k, Hashable):
             raise UnhashableKeyException(
-                "encountered unhashable key: %s, %s" % (str(k), str(type(k))))
+                "encountered unhashable key: \"{:s}\" ({:s})".format(str(k), str(type(k))))
         elif k in d:
             raise DuplicateKeyException(
-                "encountered duplicate key: %s, %s" % (str(k), str(type(k))))
+                "encountered duplicate key: \"{:s}\" ({:s})".format(str(k), str(type(k))))
 
         # Unpack value
         v = _unpack(fp, options)
@@ -928,7 +928,7 @@ def _unpack_map(code, fp, options):
             d[k] = v
         except TypeError:
             raise UnhashableKeyException(
-                "encountered unhashable key: %s" % str(k))
+                "encountered unhashable key: \"{:s}\"".format(str(k)))
     return d
 
 
