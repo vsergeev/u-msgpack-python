@@ -65,14 +65,14 @@ Streaming serialization with file-like objects:
 
 Serializing and deserializing a raw Ext type:
 ``` python
->>> # Create an Ext object with type 0x05 and data b"\x01\x02\x03"
-... foo = umsgpack.Ext(0x05, b"\x01\x02\x03")
+>>> # Create an Ext object with type 5 and data b"\x01\x02\x03"
+... foo = umsgpack.Ext(5, b"\x01\x02\x03")
 >>> umsgpack.packb({u"stuff": foo, u"awesome": True})
 b'\x82\xa5stuff\xc7\x03\x05\x01\x02\x03\xa7awesome\xc3'
 >>> 
 >>> bar = umsgpack.unpackb(_)
 >>> print(bar['stuff'])
-Ext Object (Type: 0x05, Data: 0x01 0x02 0x03)
+Ext Object (Type: 5, Data: 0x01 0x02 0x03)
 >>> bar['stuff'].type
 5
 >>> bar['stuff'].data
