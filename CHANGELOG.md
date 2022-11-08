@@ -1,3 +1,8 @@
+* Version 2.7.2 - 11/07/2022
+    * Fix hex formatting of data bytes in Ext string representation.
+    * Contributors
+        * Stefan Ring, @Ringdingcoder - 309b1a9
+
 * Version 2.7.1 - 10/24/2020
     * Add Ext type value validation to Ext class and `ext_serializable()` decorator.
     * Change string formatting from `%` to `.format()` throughout codebase.
