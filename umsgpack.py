@@ -10,7 +10,7 @@
 #
 # MIT License
 #
-# Copyright (c) 2013-2020 vsergeev / Ivan (Vanya) A. Sergeev
+# Copyright (c) 2013-2022 vsergeev / Ivan (Vanya) A. Sergeev
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
