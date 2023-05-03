@@ -498,15 +498,15 @@ def _pack2(obj, fp, **options):
             raise NotImplementedError("Ext serializable class {:s} is missing implementation of packb()".format(repr(obj.__class__)))
     elif isinstance(obj, bool):
         _pack_boolean(obj, fp, options)
-    elif isinstance(obj, (int, long)):
+    elif isinstance(obj, (int, long)):  # noqa: F821
         _pack_integer(obj, fp, options)
     elif isinstance(obj, float):
         _pack_float(obj, fp, options)
-    elif compatibility and isinstance(obj, unicode):
+    elif compatibility and isinstance(obj, unicode):  # noqa: F821
         _pack_oldspec_raw(bytes(obj), fp, options)
     elif compatibility and isinstance(obj, bytes):
         _pack_oldspec_raw(obj, fp, options)
-    elif isinstance(obj, unicode):
+    elif isinstance(obj, unicode):  # noqa: F821
         _pack_string(obj, fp, options)
     elif isinstance(obj, str):
         _pack_binary(obj, fp, options)
