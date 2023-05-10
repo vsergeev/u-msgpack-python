@@ -475,7 +475,7 @@ def _pack2(obj, fp, **options):
         None.
 
     Raises:
-        UnsupportedType(PackException):
+        UnsupportedTypeException(PackException):
             Object type not supported for packing.
 
     Example:
@@ -562,7 +562,7 @@ def _pack3(obj, fp, **options):
         None.
 
     Raises:
-        UnsupportedType(PackException):
+        UnsupportedTypeException(PackException):
             Object type not supported for packing.
 
     Example:
@@ -648,7 +648,7 @@ def _packb2(obj, **options):
         A 'str' containing serialized MessagePack bytes.
 
     Raises:
-        UnsupportedType(PackException):
+        UnsupportedTypeException(PackException):
             Object type not supported for packing.
 
     Example:
@@ -681,7 +681,7 @@ def _packb3(obj, **options):
         A 'bytes' containing serialized MessagePack bytes.
 
     Raises:
-        UnsupportedType(PackException):
+        UnsupportedTypeException(PackException):
             Object type not supported for packing.
 
     Example:
