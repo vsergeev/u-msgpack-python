@@ -77,24 +77,24 @@ class Ext(object):
         Construct a new Ext object.
 
         Args:
-            type: application-defined type integer
-            data: application-defined data byte array
+            type (int): application-defined type integer
+            data (bytes): application-defined data byte array
 
-        TypeError:
-            Type is not an integer.
-        ValueError:
-            Type is out of range of -128 to 127.
-        TypeError::
-            Data is not type 'bytes' (Python 3) or not type 'str' (Python 2).
+        Raises:
+            TypeError:
+                Type is not an integer.
+            ValueError:
+                Type is out of range of -128 to 127.
+            TypeError:
+                Data is not type 'bytes' (Python 3) or not type 'str' (Python 2).
 
         Example:
-        >>> foo = umsgpack.Ext(5, b"\x01\x02\x03")
-        >>> umsgpack.packb({u"special stuff": foo, u"awesome": True})
-        '\x82\xa7awesome\xc3\xadspecial stuff\xc7\x03\x05\x01\x02\x03'
-        >>> bar = umsgpack.unpackb(_)
-        >>> print(bar["special stuff"])
-        Ext Object (Type: 5, Data: 01 02 03)
-        >>>
+            >>> foo = umsgpack.Ext(5, b"\\x01\\x02\\x03")
+            >>> umsgpack.packb({u"special stuff": foo, u"awesome": True})
+            '\\x82\\xa7awesome\\xc3\\xadspecial stuff\\xc7\\x03\\x05\\x01\\x02\\x03'
+            >>> bar = umsgpack.unpackb(_)
+            >>> print(bar["special stuff"])
+            Ext Object (Type: 5, Data: 01 02 03)
         """
         # Check type is type int and in range
         if not isinstance(type, int):
@@ -163,7 +163,7 @@ def ext_serializable(ext_type):
     instance of the application class.
 
     Args:
-        ext_type: application-defined Ext type code
+        ext_type (int): application-defined Ext type code
 
     Raises:
         TypeError:
@@ -266,13 +266,11 @@ unicode strings and bytes into the old "raw" msgpack type, and deserialize the
 old MessagePack specification.
 
 Example:
->>> umsgpack.compatibility = True
->>>
->>> umsgpack.packb([u"some string", b"some bytes"])
-b'\x92\xabsome string\xaasome bytes'
->>> umsgpack.unpackb(_)
-[b'some string', b'some bytes']
->>>
+    >>> umsgpack.compatibility = True
+    >>> umsgpack.packb([u"some string", b"some bytes"])
+    b'\\x92\\xabsome string\\xaasome bytes'
+    >>> umsgpack.unpackb(_)
+    [b'some string', b'some bytes']
 """
 
 ##############################################################################
@@ -462,26 +460,25 @@ def _pack2(obj, fp, **options):
         obj: a Python object
         fp: a .write()-supporting file-like object
 
-    Kwargs:
+    Keyword Args:
         ext_handlers (dict): dictionary of Ext handlers, mapping a custom type
                              to a callable that packs an instance of the type
                              into an Ext object
         force_float_precision (str): "single" to force packing floats as
                                      IEEE-754 single-precision floats,
                                      "double" to force packing floats as
-                                     IEEE-754 double-precision floats.
+                                     IEEE-754 double-precision floats
 
     Returns:
-        None.
+        None
 
     Raises:
         UnsupportedTypeException(PackException):
             Object type not supported for packing.
 
     Example:
-    >>> f = open('test.bin', 'wb')
-    >>> umsgpack.pack({u"compact": True, u"schema": 0}, f)
-    >>>
+        >>> f = open('test.bin', 'wb')
+        >>> umsgpack.pack({u"compact": True, u"schema": 0}, f)
     """
     global compatibility
 
@@ -549,26 +546,25 @@ def _pack3(obj, fp, **options):
         obj: a Python object
         fp: a .write()-supporting file-like object
 
-    Kwargs:
+    Keyword Args:
         ext_handlers (dict): dictionary of Ext handlers, mapping a custom type
                              to a callable that packs an instance of the type
                              into an Ext object
         force_float_precision (str): "single" to force packing floats as
                                      IEEE-754 single-precision floats,
                                      "double" to force packing floats as
-                                     IEEE-754 double-precision floats.
+                                     IEEE-754 double-precision floats
 
     Returns:
-        None.
+        None
 
     Raises:
         UnsupportedTypeException(PackException):
             Object type not supported for packing.
 
     Example:
-    >>> f = open('test.bin', 'wb')
-    >>> umsgpack.pack({u"compact": True, u"schema": 0}, f)
-    >>>
+        >>> f = open('test.bin', 'wb')
+        >>> umsgpack.pack({u"compact": True, u"schema": 0}, f)
     """
     global compatibility
 
@@ -635,26 +631,25 @@ def _packb2(obj, **options):
     Args:
         obj: a Python object
 
-    Kwargs:
+    Keyword Args:
         ext_handlers (dict): dictionary of Ext handlers, mapping a custom type
                              to a callable that packs an instance of the type
                              into an Ext object
         force_float_precision (str): "single" to force packing floats as
                                      IEEE-754 single-precision floats,
                                      "double" to force packing floats as
-                                     IEEE-754 double-precision floats.
+                                     IEEE-754 double-precision floats
 
     Returns:
-        A 'str' containing serialized MessagePack bytes.
+        str: Serialized MessagePack bytes
 
     Raises:
         UnsupportedTypeException(PackException):
             Object type not supported for packing.
 
     Example:
-    >>> umsgpack.packb({u"compact": True, u"schema": 0})
-    '\x82\xa7compact\xc3\xa6schema\x00'
-    >>>
+        >>> umsgpack.packb({u"compact": True, u"schema": 0})
+        '\\x82\\xa7compact\\xc3\\xa6schema\\x00'
     """
     fp = io.BytesIO()
     _pack2(obj, fp, **options)
@@ -668,26 +663,25 @@ def _packb3(obj, **options):
     Args:
         obj: a Python object
 
-    Kwargs:
+    Keyword Args:
         ext_handlers (dict): dictionary of Ext handlers, mapping a custom type
                              to a callable that packs an instance of the type
                              into an Ext object
         force_float_precision (str): "single" to force packing floats as
                                      IEEE-754 single-precision floats,
                                      "double" to force packing floats as
-                                     IEEE-754 double-precision floats.
+                                     IEEE-754 double-precision floats
 
     Returns:
-        A 'bytes' containing serialized MessagePack bytes.
+        bytes: Serialized MessagePack bytes
 
     Raises:
         UnsupportedTypeException(PackException):
             Object type not supported for packing.
 
     Example:
-    >>> umsgpack.packb({u"compact": True, u"schema": 0})
-    b'\x82\xa7compact\xc3\xa6schema\x00'
-    >>>
+        >>> umsgpack.packb({u"compact": True, u"schema": 0})
+        b'\\x82\\xa7compact\\xc3\\xa6schema\\x00'
     """
     fp = io.BytesIO()
     _pack3(obj, fp, **options)
@@ -946,20 +940,20 @@ def _unpack2(fp, **options):
     Args:
         fp: a .read()-supporting file-like object
 
-    Kwargs:
+    Keyword Args:
         ext_handlers (dict): dictionary of Ext handlers, mapping integer Ext
                              type to a callable that unpacks an instance of
                              Ext into an object
-        use_ordered_dict (bool): unpack maps into OrderedDict, instead of
-                                 unordered dict (default False)
+        use_ordered_dict (bool): unpack maps into OrderedDict, instead of dict
+                                 (default False)
         use_tuple (bool): unpacks arrays into tuples, instead of lists (default
                           False)
         allow_invalid_utf8 (bool): unpack invalid strings into instances of
-                                   InvalidString, for access to the bytes
-                                   (default False)
+                                   :class:`InvalidString`, for access to the
+                                   bytes (default False)
 
     Returns:
-        A Python object.
+        Python object
 
     Raises:
         InsufficientDataException(UnpackException):
@@ -977,10 +971,9 @@ def _unpack2(fp, **options):
             Duplicate key encountered during map unpacking.
 
     Example:
-    >>> f = open('test.bin', 'rb')
-    >>> umsgpack.unpackb(f)
-    {u'compact': True, u'schema': 0}
-    >>>
+        >>> f = open('test.bin', 'rb')
+        >>> umsgpack.unpackb(f)
+        {u'compact': True, u'schema': 0}
     """
     return _unpack(fp, options)
 
@@ -992,20 +985,20 @@ def _unpack3(fp, **options):
     Args:
         fp: a .read()-supporting file-like object
 
-    Kwargs:
+    Keyword Args:
         ext_handlers (dict): dictionary of Ext handlers, mapping integer Ext
                              type to a callable that unpacks an instance of
                              Ext into an object
-        use_ordered_dict (bool): unpack maps into OrderedDict, instead of
-                                 unordered dict (default False)
+        use_ordered_dict (bool): unpack maps into OrderedDict, instead of dict
+                                 (default False)
         use_tuple (bool): unpacks arrays into tuples, instead of lists (default
                           False)
         allow_invalid_utf8 (bool): unpack invalid strings into instances of
-                                   InvalidString, for access to the bytes
-                                   (default False)
+                                   :class:`InvalidString`, for access to the
+                                   bytes (default False)
 
     Returns:
-        A Python object.
+        Python object
 
     Raises:
         InsufficientDataException(UnpackException):
@@ -1023,10 +1016,9 @@ def _unpack3(fp, **options):
             Duplicate key encountered during map unpacking.
 
     Example:
-    >>> f = open('test.bin', 'rb')
-    >>> umsgpack.unpackb(f)
-    {'compact': True, 'schema': 0}
-    >>>
+        >>> f = open('test.bin', 'rb')
+        >>> umsgpack.unpackb(f)
+        {'compact': True, 'schema': 0}
     """
     return _unpack(fp, options)
 
@@ -1037,22 +1029,22 @@ def _unpackb2(s, **options):
     Deserialize MessagePack bytes into a Python object.
 
     Args:
-        s: a 'str' or 'bytearray' containing serialized MessagePack bytes
+        s (str, bytearray): serialized MessagePack bytes
 
-    Kwargs:
+    Keyword Args:
         ext_handlers (dict): dictionary of Ext handlers, mapping integer Ext
                              type to a callable that unpacks an instance of
                              Ext into an object
-        use_ordered_dict (bool): unpack maps into OrderedDict, instead of
-                                 unordered dict (default False)
+        use_ordered_dict (bool): unpack maps into OrderedDict, instead of dict
+                                 (default False)
         use_tuple (bool): unpacks arrays into tuples, instead of lists (default
                           False)
         allow_invalid_utf8 (bool): unpack invalid strings into instances of
-                                   InvalidString, for access to the bytes
-                                   (default False)
+                                   :class:`InvalidString`, for access to the
+                                   bytes (default False)
 
     Returns:
-        A Python object.
+        Python object
 
     Raises:
         TypeError:
@@ -1072,9 +1064,8 @@ def _unpackb2(s, **options):
             Duplicate key encountered during map unpacking.
 
     Example:
-    >>> umsgpack.unpackb(b'\x82\xa7compact\xc3\xa6schema\x00')
-    {u'compact': True, u'schema': 0}
-    >>>
+        >>> umsgpack.unpackb(b'\\x82\\xa7compact\\xc3\\xa6schema\\x00')
+        {u'compact': True, u'schema': 0}
     """
     if not isinstance(s, (str, bytearray)):
         raise TypeError("packed data must be type 'str' or 'bytearray'")
@@ -1087,22 +1078,22 @@ def _unpackb3(s, **options):
     Deserialize MessagePack bytes into a Python object.
 
     Args:
-        s: a 'bytes' or 'bytearray' containing serialized MessagePack bytes
+        s (bytes, bytearray): serialized MessagePack bytes
 
-    Kwargs:
+    Keyword Args:
         ext_handlers (dict): dictionary of Ext handlers, mapping integer Ext
                              type to a callable that unpacks an instance of
                              Ext into an object
-        use_ordered_dict (bool): unpack maps into OrderedDict, instead of
-                                 unordered dict (default False)
+        use_ordered_dict (bool): unpack maps into OrderedDict, instead of dict
+                                 (default False)
         use_tuple (bool): unpacks arrays into tuples, instead of lists (default
                           False)
         allow_invalid_utf8 (bool): unpack invalid strings into instances of
-                                   InvalidString, for access to the bytes
-                                   (default False)
+                                   :class:`InvalidString`, for access to the
+                                   bytes (default False)
 
     Returns:
-        A Python object.
+        Python object
 
     Raises:
         TypeError:
@@ -1122,9 +1113,8 @@ def _unpackb3(s, **options):
             Duplicate key encountered during map unpacking.
 
     Example:
-    >>> umsgpack.unpackb(b'\x82\xa7compact\xc3\xa6schema\x00')
-    {'compact': True, 'schema': 0}
-    >>>
+        >>> umsgpack.unpackb(b'\\x82\\xa7compact\\xc3\\xa6schema\\x00')
+        {'compact': True, 'schema': 0}
     """
     if not isinstance(s, (bytes, bytearray)):
         raise TypeError("packed data must be type 'bytes' or 'bytearray'")
