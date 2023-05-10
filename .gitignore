@@ -7,3 +7,4 @@ dist/
 .tox/
 .cache/
 .pytest_cache/
+docs/_build

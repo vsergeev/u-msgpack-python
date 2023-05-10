@@ -1,29 +1,7 @@
-# u-msgpack-python [![Build Status](https://app.travis-ci.com/vsergeev/u-msgpack-python.svg?branch=master)](https://app.travis-ci.com/github/vsergeev/u-msgpack-python) [![GitHub release](https://img.shields.io/github/release/vsergeev/u-msgpack-python.svg?maxAge=7200)](https://github.com/vsergeev/u-msgpack-python) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/vsergeev/u-msgpack-python/blob/master/LICENSE)
-
-u-msgpack-python is a lightweight [MessagePack](http://msgpack.org/) serializer and deserializer module written in pure Python, compatible with Python 2 and 3, as well CPython and PyPy implementations of Python. u-msgpack-python is fully compliant with the latest [MessagePack specification](https://github.com/msgpack/msgpack/blob/master/spec.md). In particular, it supports the new binary, UTF-8 string, application-defined ext, and timestamp types.
-
-u-msgpack-python is currently distributed on [PyPI](https://pypi.python.org/pypi/u-msgpack-python) and as a single file: [umsgpack.py](https://raw.github.com/vsergeev/u-msgpack-python/master/umsgpack.py).
-
-## Installation
-
-With pip:
-``` text
-$ pip install u-msgpack-python
-```
-
-With easy_install:
-``` text
-$ easy_install u-msgpack-python
-```
-
-or simply drop [umsgpack.py](https://raw.github.com/vsergeev/u-msgpack-python/master/umsgpack.py) into your project!
-``` text
-$ wget https://raw.github.com/vsergeev/u-msgpack-python/master/umsgpack.py
-```
-
-## Examples
+# Examples
 
 Basic Example:
+
 ``` python
 >>> import umsgpack
 >>> umsgpack.packb({u"compact": True, u"schema": 0})
@@ -34,6 +12,7 @@ b'\x82\xa7compact\xc3\xa6schema\x00'
 ```
 
 A more complicated example:
+
 ``` python
 >>> umsgpack.packb([1, True, False, 0xffffffff, {u"foo": b"\x80\x01\x02", \
 ...                 u"bar": [1,2,3, {u"a": [1,2,3,{}]}]}, -1, 2.12345])
@@ -47,6 +26,7 @@ b'\x97\x01\xc3\xc2\xce\xff\xff\xff\xff\x82\xa3foo\xc4\x03\x80\x01\
 ```
 
 Streaming serialization with file-like objects:
+
 ``` python
 >>> f = open('test.bin', 'wb')
 >>> umsgpack.pack({u"compact": True, u"schema": 0}, f)
@@ -63,6 +43,7 @@ Streaming serialization with file-like objects:
 ```
 
 Serializing and deserializing a raw Ext type:
+
 ``` python
 >>> # Create an Ext object with type 5 and data b"\x01\x02\x03"
 ... foo = umsgpack.Ext(5, b"\x01\x02\x03")
@@ -79,7 +60,9 @@ b'\x01\x02\x03'
 >>> 
 ```
 
-Serializing and deserializing application-defined types with `ext_serializable()`:
+Serializing and deserializing application-defined types with
+
+`ext_serializable()`:
 ``` python
 >>> @umsgpack.ext_serializable(0x50)
 ... class Point(collections.namedtuple('Point', ['x', 'y'])):
@@ -97,6 +80,7 @@ Point(x=1, y=2)
 ```
 
 Serializing and deserializing application-defined types with Ext handlers:
+
 ``` python
 >>> umsgpack.packb([complex(1,2), decimal.Decimal("0.31")],
 ...  ext_handlers = {
@@ -113,7 +97,9 @@ b'\x92\xd70\x00\x00\x80?\x00\x00\x00@\xd6@0.31'
 >>> 
 ```
 
-Python standard library style names `dump`, `dumps`, `load`, `loads` are also available:
+Python standard library style names `dump`, `dumps`, `load`, `loads` are also
+available:
+
 ``` python
 >>> umsgpack.dumps({u"compact": True, u"schema": 0})
 b'\x82\xa7compact\xc3\xa6schema\x00'
@@ -129,40 +115,3 @@ b'\x82\xa7compact\xc3\xa6schema\x00'
 {u'compact': True, u'schema': 0}
 >>> 
 ```
-
-## Documentation
-
-Documentation is hosted at [https://u-msgpack-python.readthedocs.io](https://u-msgpack-python.readthedocs.io).
-
-To build documentation locally with Sphinx, run:
-
-```
-cd docs
-make html
-```
-
-Sphinx will produce the HTML documentation in `docs/_build/html/`.
-
-Run `make help` to see other output targets (LaTeX, man, text, etc.).
-
-## Testing
-
-The included unit tests may be run with `test_umsgpack.py`, under your favorite interpreter.
-
-``` text
-$ python2 test_umsgpack.py
-$ python3 test_umsgpack.py
-$ pypy test_umsgpack.py
-$ pypy3 test_umsgpack.py
-```
-
-Alternatively, you can use `tox` or `detox` to test multiple Python versions at once.
-
-``` text
-$ pip install tox
-$ tox
-```
-
-## License
-
-u-msgpack-python is MIT licensed. See the included `LICENSE` file for more details.
