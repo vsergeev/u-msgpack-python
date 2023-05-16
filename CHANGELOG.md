@@ -1,3 +1,9 @@
+* Version 2.8.0 - 05/18/2023
+    * Migrate module to package.
+    * Migrate documentation to Sphinx.
+    * Improve types and formatting in docstrings.
+    * Add type stubs.
+
 * Version 2.7.2 - 11/07/2022
     * Fix hex formatting of data bytes in Ext string representation.
     * Contributors

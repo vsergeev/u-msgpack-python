@@ -1,4 +1,4 @@
-# u-msgpack-python v2.7.2 - v at sergeev.io
+# u-msgpack-python v2.8.0 - v at sergeev.io
 # https://github.com/vsergeev/u-msgpack-python
 #
 # u-msgpack-python is a lightweight MessagePack serializer and deserializer
@@ -31,7 +31,7 @@
 # THE SOFTWARE.
 #
 """
-u-msgpack-python v2.7.2 - v at sergeev.io
+u-msgpack-python v2.8.0 - v at sergeev.io
 https://github.com/vsergeev/u-msgpack-python
 
 u-msgpack-python is a lightweight MessagePack serializer and deserializer
@@ -54,10 +54,10 @@ if sys.version_info[0:2] >= (3, 3):
 else:
     from collections import Hashable
 
-__version__ = "2.7.2"
+__version__ = "2.8.0"
 "Module version string"
 
-version = (2, 7, 2)
+version = (2, 8, 0)
 "Module version tuple"
 
 

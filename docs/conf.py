@@ -21,7 +21,7 @@ import umsgpack
 project = 'u-msgpack-python'
 copyright = '2013-2023, Vanya A. Sergeev'
 author = 'Vanya A. Sergeev'
-release = '2.7.2'
+release = '2.8.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

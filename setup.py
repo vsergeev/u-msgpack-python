@@ -5,7 +5,7 @@ except ImportError:
 
 setup(
     name='u-msgpack-python',
-    version='2.7.2',
+    version='2.8.0',
     description='A portable, lightweight MessagePack serializer and deserializer written in pure Python.',
     author='vsergeev',
     author_email='v@sergeev.io',
