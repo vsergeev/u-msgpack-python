@@ -23,6 +23,6 @@ matrix:
     - python: 3.11
       env: TOXENV=py311
     - python: pypy2.7-7.3.1
-      env: TOXENV=pypy
+      env: TOXENV=pypy2
     - python: pypy3.6-7.3.1
       env: TOXENV=pypy3
