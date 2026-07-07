@@ -45,6 +45,7 @@ License: MIT
 """
 import struct
 import collections
+import functools
 import datetime
 import sys
 import io
@@ -872,7 +873,7 @@ def _unpack_ext_timestamp(ext_data, options):
                                        microseconds=microseconds)
 
 
-def _unpack_array(code, fp, options):
+def _unpack_array(code, fp, options, depth=None):
     if (ord(code) & 0xf0) == 0x90:
         length = (ord(code) & ~0xf0)
     elif code == b'\xdc':
@@ -883,9 +884,12 @@ def _unpack_array(code, fp, options):
         raise Exception("logic error, not array: 0x{:02x}".format(ord(code)))
 
     if options.get('use_tuple'):
-        return tuple((_unpack(fp, options) for i in xrange(length)))
+        return tuple((_unpack(fp, options) if depth is None
+                      else _unpack_depth(fp, options, depth)
+                      for i in xrange(length)))
 
-    return [_unpack(fp, options) for i in xrange(length)]
+    return [_unpack(fp, options) if depth is None
+            else _unpack_depth(fp, options, depth) for i in xrange(length)]
 
 
 def _deep_list_to_tuple(obj):
@@ -894,7 +898,7 @@ def _deep_list_to_tuple(obj):
     return obj
 
 
-def _unpack_map(code, fp, options):
+def _unpack_map(code, fp, options, depth=None):
     if (ord(code) & 0xf0) == 0x80:
         length = (ord(code) & ~0xf0)
     elif code == b'\xde':
@@ -907,7 +911,8 @@ def _unpack_map(code, fp, options):
     d = {} if not options.get('use_ordered_dict') else collections.OrderedDict()
     for _ in xrange(length):
         # Unpack key
-        k = _unpack(fp, options)
+        k = _unpack(fp, options) if depth is None \
+            else _unpack_depth(fp, options, depth)
 
         if isinstance(k, list):
             # Attempt to convert list into a hashable tuple
@@ -920,7 +925,8 @@ def _unpack_map(code, fp, options):
                 "encountered duplicate key: \"{:s}\" ({:s})".format(str(k), str(type(k))))
 
         # Unpack value
-        v = _unpack(fp, options)
+        v = _unpack(fp, options) if depth is None \
+            else _unpack_depth(fp, options, depth)
 
         try:
             d[k] = v
@@ -933,6 +939,33 @@ def _unpack_map(code, fp, options):
 def _unpack(fp, options):
     code = _read_except(fp, 1)
     return _unpack_dispatch_table[code](code, fp, options)
+
+
+def _unpack_depth(fp, options, depth):
+    code = _read_except(fp, 1)
+    return _unpack_depth_dispatch_table[code](code, fp, options, depth)
+
+
+def _limit_depth(unpack_container):
+    """Wrap a depth-aware container unpacker to enforce options['max_depth'].
+
+    depth is passed as a local argument and incremented on entry.
+    """
+    @functools.wraps(unpack_container)
+    def wrapper(code, fp, options, depth):
+        depth += 1
+        if depth > options['max_depth']:
+            raise MaximumDepthException("maximum nesting depth exceeded")
+        return unpack_container(code, fp, options, depth)
+    return wrapper
+
+
+def _ignore_depth(unpacker):
+    """Adapt a scalar (non-container) unpacker to the depth dispatch signature."""
+    @functools.wraps(unpacker)
+    def wrapper(code, fp, options, depth):
+        return unpacker(code, fp, options)
+    return wrapper
 
 ########################################
 
@@ -955,6 +988,10 @@ def _unpack2(fp, **options):
         allow_invalid_utf8 (bool): unpack invalid strings into instances of
                                    :class:`InvalidString`, for access to the
                                    bytes (default False)
+        max_depth (int): maximum nesting depth of arrays/maps to unpack; when
+                         exceeded, :class:`MaximumDepthException` is raised. If
+                         None (default), depth is bounded only by the
+                         interpreter's recursion limit.
 
     Returns:
         Python object
@@ -975,7 +1012,8 @@ def _unpack2(fp, **options):
             Duplicate key encountered during map unpacking.
         MaximumDepthException(UnpackException):
             Maximum nesting depth exceeded while unpacking a deeply-nested
-            object (raised instead of a bare RecursionError).
+            object, or the configured limit was exceeded (when ``max_depth`` is
+            set).
 
     Example:
         >>> f = open('test.bin', 'rb')
@@ -1009,6 +1047,10 @@ def _unpack3(fp, **options):
         allow_invalid_utf8 (bool): unpack invalid strings into instances of
                                    :class:`InvalidString`, for access to the
                                    bytes (default False)
+        max_depth (int): maximum nesting depth of arrays/maps to unpack; when
+                         exceeded, :class:`MaximumDepthException` is raised. If
+                         None (default), depth is bounded only by the
+                         interpreter's recursion limit.
 
     Returns:
         Python object
@@ -1029,7 +1071,8 @@ def _unpack3(fp, **options):
             Duplicate key encountered during map unpacking.
         MaximumDepthException(UnpackException):
             Maximum nesting depth exceeded while unpacking a deeply-nested
-            object (raised instead of a bare RecursionError).
+            object, or the configured limit was exceeded (when ``max_depth`` is
+            set).
 
     Example:
         >>> f = open('test.bin', 'rb')
@@ -1037,7 +1080,8 @@ def _unpack3(fp, **options):
         {'compact': True, 'schema': 0}
     """
     try:
-        return _unpack(fp, options)
+        return _unpack(fp, options) if options.get('max_depth') is None \
+            else _unpack_depth(fp, options, 0)
     except RecursionError:
         raise MaximumDepthException("maximum nesting depth exceeded")
 
@@ -1061,6 +1105,10 @@ def _unpackb2(s, **options):
         allow_invalid_utf8 (bool): unpack invalid strings into instances of
                                    :class:`InvalidString`, for access to the
                                    bytes (default False)
+        max_depth (int): maximum nesting depth of arrays/maps to unpack; when
+                         exceeded, :class:`MaximumDepthException` is raised. If
+                         None (default), depth is bounded only by the
+                         interpreter's recursion limit.
 
     Returns:
         Python object
@@ -1083,7 +1131,8 @@ def _unpackb2(s, **options):
             Duplicate key encountered during map unpacking.
         MaximumDepthException(UnpackException):
             Maximum nesting depth exceeded while unpacking a deeply-nested
-            object (raised instead of a bare RecursionError).
+            object, or the configured limit was exceeded (when ``max_depth`` is
+            set).
 
     Example:
         >>> umsgpack.unpackb(b'\\x82\\xa7compact\\xc3\\xa6schema\\x00')
@@ -1119,6 +1168,10 @@ def _unpackb3(s, **options):
         allow_invalid_utf8 (bool): unpack invalid strings into instances of
                                    :class:`InvalidString`, for access to the
                                    bytes (default False)
+        max_depth (int): maximum nesting depth of arrays/maps to unpack; when
+                         exceeded, :class:`MaximumDepthException` is raised. If
+                         None (default), depth is bounded only by the
+                         interpreter's recursion limit.
 
     Returns:
         Python object
@@ -1141,7 +1194,8 @@ def _unpackb3(s, **options):
             Duplicate key encountered during map unpacking.
         MaximumDepthException(UnpackException):
             Maximum nesting depth exceeded while unpacking a deeply-nested
-            object (raised instead of a bare RecursionError).
+            object, or the configured limit was exceeded (when ``max_depth`` is
+            set).
 
     Example:
         >>> umsgpack.unpackb(b'\\x82\\xa7compact\\xc3\\xa6schema\\x00')
@@ -1150,7 +1204,8 @@ def _unpackb3(s, **options):
     if not isinstance(s, (bytes, bytearray)):
         raise TypeError("packed data must be type 'bytes' or 'bytearray'")
     try:
-        return _unpack(io.BytesIO(s), options)
+        return _unpack(io.BytesIO(s), options) if options.get('max_depth') is None \
+            else _unpack_depth(io.BytesIO(s), options, 0)
     except RecursionError:
         raise MaximumDepthException("maximum nesting depth exceeded")
 
@@ -1277,6 +1332,18 @@ def __init():
     # Negative fixint
     for code in range(0xe0, 0xff + 1):
         _unpack_dispatch_table[struct.pack("B", code)] = _unpack_integer
+
+    # Parallel dispatch table for the optional max_depth path. The array/map
+    # entries are the same container functions as the default table, wrapped by
+    # _limit_depth; scalar unpackers are adapted to accept (and ignore) the
+    # depth argument so _unpack() can dispatch uniformly with no per-code switch.
+    global _unpack_depth_dispatch_table
+    _unpack_depth_dispatch_table = {}
+    for code_bytes, unpacker in _unpack_dispatch_table.items():
+        if unpacker is _unpack_array or unpacker is _unpack_map:
+            _unpack_depth_dispatch_table[code_bytes] = _limit_depth(unpacker)
+        else:
+            _unpack_depth_dispatch_table[code_bytes] = _ignore_depth(unpacker)
 
 
 __init()

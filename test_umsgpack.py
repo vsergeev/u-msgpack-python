@@ -765,19 +765,33 @@ class TestUmsgpack(unittest.TestCase):
         reader = io.BytesIO(data)
         self.assertEqual(umsgpack.unpack(reader), obj)
 
-    def test_deep_nesting_wraps_recursion(self):
-        # Deeply nested input must raise a MaximumDepthException (an
-        # UnpackException), not a bare RecursionError.
+    def test_max_depth_default_wraps_recursion(self):
+        # Default (no max_depth): deeply nested input must raise a
+        # MaximumDepthException (an UnpackException), not a bare RecursionError.
         payload = b"\x91" * 5000 + b"\xc0"
         self.assertRaises(umsgpack.MaximumDepthException, umsgpack.unpackb, payload)
         self.assertRaises(umsgpack.UnpackException, umsgpack.unpackb, payload)
+        # Moderate nesting still works.
+        self.assertEqual(umsgpack.unpackb(b"\x91" * 100 + b"\xc0"),
+                         umsgpack.unpackb(b"\x91" * 100 + b"\xc0"))
+
+    def test_max_depth_cap_arrays_and_maps(self):
+        self.assertTrue(
+            umsgpack.unpackb(b"\x91" * 32 + b"\xc0", max_depth=32) is not None)
+        self.assertRaises(umsgpack.MaximumDepthException,
+                          umsgpack.unpackb, b"\x91" * 33 + b"\xc0", max_depth=32)
+        self.assertRaises(umsgpack.MaximumDepthException,
+                          umsgpack.unpackb, b"\x81\xa1k" * 17 + b"\xc0", max_depth=16)
+        # Siblings are not counted, only nesting depth.
+        self.assertEqual(
+            len(umsgpack.unpackb(b"\xdc\x00\xc8" + b"\xc0" * 200, max_depth=1)), 200)
 
     def test_namespacing(self):
         # Get a list of global variables from umsgpack module
         exported_vars = list([x for x in dir(umsgpack) if not x.startswith("_")])
         # Ignore imports
         exported_vars = list([x for x in exported_vars if x != "struct" and x != "collections" and x != "datetime" and x !=
-                                    "sys" and x != "io" and x != "xrange" and x != "Hashable"])
+                                    "sys" and x != "io" and x != "xrange" and x != "Hashable" and x != "functools"])
 
         self.assertTrue(len(exported_vars) == len(exported_vars_test_vector))
         for var in exported_vars_test_vector:
