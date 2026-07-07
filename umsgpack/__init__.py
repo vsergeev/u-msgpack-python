@@ -238,6 +238,10 @@ class DuplicateKeyException(UnpackException):
     "Duplicate key encountered during map unpacking."
 
 
+class MaximumDepthException(UnpackException):
+    "Maximum nesting depth exceeded during unpacking."
+
+
 # Backwards compatibility
 KeyNotPrimitiveException = UnhashableKeyException
 KeyDuplicateException = DuplicateKeyException
@@ -969,13 +973,22 @@ def _unpack2(fp, **options):
             The serialized map cannot be deserialized into a Python dictionary.
         DuplicateKeyException(UnpackException):
             Duplicate key encountered during map unpacking.
+        MaximumDepthException(UnpackException):
+            Maximum nesting depth exceeded while unpacking a deeply-nested
+            object (raised instead of a bare RecursionError).
 
     Example:
         >>> f = open('test.bin', 'rb')
         >>> umsgpack.unpackb(f)
         {u'compact': True, u'schema': 0}
     """
-    return _unpack(fp, options)
+    try:
+        return _unpack(fp, options) if options.get('max_depth') is None \
+            else _unpack_depth(fp, options, 0)
+    except RuntimeError as e:
+        if "maximum recursion depth" in str(e):
+            raise MaximumDepthException("maximum nesting depth exceeded")
+        raise
 
 
 def _unpack3(fp, **options):
@@ -1014,13 +1027,19 @@ def _unpack3(fp, **options):
             The serialized map cannot be deserialized into a Python dictionary.
         DuplicateKeyException(UnpackException):
             Duplicate key encountered during map unpacking.
+        MaximumDepthException(UnpackException):
+            Maximum nesting depth exceeded while unpacking a deeply-nested
+            object (raised instead of a bare RecursionError).
 
     Example:
         >>> f = open('test.bin', 'rb')
         >>> umsgpack.unpackb(f)
         {'compact': True, 'schema': 0}
     """
-    return _unpack(fp, options)
+    try:
+        return _unpack(fp, options)
+    except RecursionError:
+        raise MaximumDepthException("maximum nesting depth exceeded")
 
 
 # For Python 2, expects a str object
@@ -1062,6 +1081,9 @@ def _unpackb2(s, **options):
             The serialized map cannot be deserialized into a Python dictionary.
         DuplicateKeyException(UnpackException):
             Duplicate key encountered during map unpacking.
+        MaximumDepthException(UnpackException):
+            Maximum nesting depth exceeded while unpacking a deeply-nested
+            object (raised instead of a bare RecursionError).
 
     Example:
         >>> umsgpack.unpackb(b'\\x82\\xa7compact\\xc3\\xa6schema\\x00')
@@ -1069,7 +1091,13 @@ def _unpackb2(s, **options):
     """
     if not isinstance(s, (str, bytearray)):
         raise TypeError("packed data must be type 'str' or 'bytearray'")
-    return _unpack(io.BytesIO(s), options)
+    try:
+        return _unpack(io.BytesIO(s), options) if options.get('max_depth') is None \
+            else _unpack_depth(io.BytesIO(s), options, 0)
+    except RuntimeError as e:
+        if "maximum recursion depth" in str(e):
+            raise MaximumDepthException("maximum nesting depth exceeded")
+        raise
 
 
 # For Python 3, expects a bytes object
@@ -1111,6 +1139,9 @@ def _unpackb3(s, **options):
             The serialized map cannot be deserialized into a Python dictionary.
         DuplicateKeyException(UnpackException):
             Duplicate key encountered during map unpacking.
+        MaximumDepthException(UnpackException):
+            Maximum nesting depth exceeded while unpacking a deeply-nested
+            object (raised instead of a bare RecursionError).
 
     Example:
         >>> umsgpack.unpackb(b'\\x82\\xa7compact\\xc3\\xa6schema\\x00')
@@ -1118,7 +1149,10 @@ def _unpackb3(s, **options):
     """
     if not isinstance(s, (bytes, bytearray)):
         raise TypeError("packed data must be type 'bytes' or 'bytearray'")
-    return _unpack(io.BytesIO(s), options)
+    try:
+        return _unpack(io.BytesIO(s), options)
+    except RecursionError:
+        raise MaximumDepthException("maximum nesting depth exceeded")
 
 #############################################################################
 # Module Initialization

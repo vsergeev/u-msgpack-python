@@ -381,6 +381,7 @@ exported_vars_test_vector = [
     "ReservedCodeException",
     "UnhashableKeyException",
     "DuplicateKeyException",
+    "MaximumDepthException",
     "KeyNotPrimitiveException",
     "KeyDuplicateException",
     "ext_serializable",
@@ -763,6 +764,13 @@ class TestUmsgpack(unittest.TestCase):
         (_, obj, data) = composite_test_vectors[0]
         reader = io.BytesIO(data)
         self.assertEqual(umsgpack.unpack(reader), obj)
+
+    def test_deep_nesting_wraps_recursion(self):
+        # Deeply nested input must raise a MaximumDepthException (an
+        # UnpackException), not a bare RecursionError.
+        payload = b"\x91" * 5000 + b"\xc0"
+        self.assertRaises(umsgpack.MaximumDepthException, umsgpack.unpackb, payload)
+        self.assertRaises(umsgpack.UnpackException, umsgpack.unpackb, payload)
 
     def test_namespacing(self):
         # Get a list of global variables from umsgpack module
