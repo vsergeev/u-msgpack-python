@@ -1,3 +1,17 @@
+* Version 2.9.0 - 11/13/2026
+    * Catch interpreter's `RecursionError` for deeply-nested inputs during
+      unpacking and re-raise it as `MaximumDepthException`, a new subclass of
+      `UnpackException`.
+    * Add a `max_depth` option to unpacking functions to limit array/map
+      nesting depth during unpacking.
+    * Add Python 3.12, 3.13, 3.14, 3.15 and PyPy 3.10, 3.11, 3.12 environments
+      to the CI.
+    * Improve type stubs.
+    * Fix typos in documentation and docstrings.
+    * Contributors
+        * oc-8a8a9d - a6302d4, 541d1fd
+        * Rogdham (@Rogdham) - ed710d4, c3c7b5d
+
 * Version 2.8.0 - 05/18/2023
     * Migrate module to package.
     * Migrate documentation to Sphinx.
