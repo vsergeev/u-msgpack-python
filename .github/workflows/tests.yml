@@ -7,21 +7,48 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["2.7", "3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "pypy2.7", "pypy3.9"]
+        include:
+          - python-version: "2.7"
+            container: python:2.7
+            toxenv: py27
+          - python-version: "3.5"
+            container: python:3.5
+            toxenv: py35
+          - python-version: "3.6"
+            container: python:3.6
+            toxenv: py36,mypy
+          - python-version: "3.7"
+            container: python:3.7
+            toxenv: py37,mypy
+          - python-version: "pypy2.7"
+            container: pypy:2.7
+            toxenv: pypy2
+          - python-version: "3.8"
+            toxenv: py38,mypy
+          - python-version: "3.9"
+            toxenv: py39,mypy
+          - python-version: "3.10"
+            toxenv: py310,mypy
+          - python-version: "3.11"
+            toxenv: py311,mypy
+          - python-version: "pypy3.9"
+            toxenv: pypy3
 
+    container: ${{ matrix.container }}
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
+      if: ${{ !matrix.container }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install tox tox-gh-actions
+        python -m pip install tox
     - name: Test with tox
-      run: tox
+      run: tox -e ${{ matrix.toxenv }}
