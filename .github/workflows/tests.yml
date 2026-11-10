@@ -35,15 +35,23 @@ jobs:
             toxenv: py310,mypy
           - python-version: "3.11"
             toxenv: py311,mypy
+          - python-version: "3.12"
+            toxenv: py312,mypy
+          - python-version: "3.13"
+            toxenv: py313,mypy
+          - python-version: "3.14"
+            toxenv: py314,mypy
+          - python-version: "3.15"
+            toxenv: py315,mypy
           - python-version: "pypy3.9"
             toxenv: pypy3
 
     container: ${{ matrix.container }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
       if: ${{ !matrix.container }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
