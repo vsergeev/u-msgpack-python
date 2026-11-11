@@ -2,11 +2,12 @@
 # https://github.com/vsergeev/u-msgpack-python
 #
 # u-msgpack-python is a lightweight MessagePack serializer and deserializer
-# module, compatible with both Python 2 and 3, as well CPython and PyPy
+# module, compatible with both Python 2 and 3, as well as CPython and PyPy
 # implementations of Python. u-msgpack-python is fully compliant with the
-# latest MessagePack specification.com/msgpack/msgpack/blob/master/spec.md). In
-# particular, it supports the new binary, UTF-8 string, and application ext
-# types.
+# latest MessagePack specification
+# (https://github.com/msgpack/msgpack/blob/master/spec.md). In particular, it
+# supports the new binary, UTF-8 string, application-defined ext, and
+# timestamp types.
 #
 # MIT License
 #
@@ -35,10 +36,11 @@ u-msgpack-python v2.8.0 - v at sergeev.io
 https://github.com/vsergeev/u-msgpack-python
 
 u-msgpack-python is a lightweight MessagePack serializer and deserializer
-module, compatible with both Python 2 and 3, as well CPython and PyPy
+module, compatible with both Python 2 and 3, as well as CPython and PyPy
 implementations of Python. u-msgpack-python is fully compliant with the
-latest MessagePack specification.com/msgpack/msgpack/blob/master/spec.md). In
-particular, it supports the new binary, UTF-8 string, and application ext
+latest MessagePack specification
+(https://github.com/msgpack/msgpack/blob/master/spec.md). In particular, it
+supports the new binary, UTF-8 string, application-defined ext, and timestamp
 types.
 
 License: MIT
