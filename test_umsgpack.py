@@ -747,7 +747,7 @@ class TestUmsgpack(unittest.TestCase):
         (_, obj, data) = composite_test_vectors[0]
         writer = io.BytesIO()
         umsgpack.pack(obj, writer)
-        self.assertTrue(writer.getvalue(), data)
+        self.assertEqual(writer.getvalue(), data)
 
     def test_streaming_reader(self):
         # Try first composite test vector
