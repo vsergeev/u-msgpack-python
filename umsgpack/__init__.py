@@ -447,7 +447,7 @@ def _pack_map(obj, fp, options):
     elif obj_len < 2**32:
         fp.write(b"\xdf" + struct.pack(">I", obj_len))
     else:
-        raise UnsupportedTypeException("huge array")
+        raise UnsupportedTypeException("huge map")
 
     for k, v in obj.items():
         pack(k, fp, **options)
