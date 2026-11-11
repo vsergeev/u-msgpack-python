@@ -94,10 +94,10 @@ class Ext(object):
         Example:
             >>> foo = umsgpack.Ext(5, b"\\x01\\x02\\x03")
             >>> umsgpack.packb({u"special stuff": foo, u"awesome": True})
-            '\\x82\\xa7awesome\\xc3\\xadspecial stuff\\xc7\\x03\\x05\\x01\\x02\\x03'
+            b'\\x82\\xadspecial stuff\\xc7\\x03\\x05\\x01\\x02\\x03\\xa7awesome\\xc3'
             >>> bar = umsgpack.unpackb(_)
             >>> print(bar["special stuff"])
-            Ext Object (Type: 5, Data: 01 02 03)
+            Ext Object (Type: 5, Data: 0x01 0x02 0x03)
         """
         # Check type is type int and in range
         if not isinstance(type, int):
@@ -1014,7 +1014,7 @@ def _unpack2(fp, **options):
 
     Example:
         >>> f = open('test.bin', 'rb')
-        >>> umsgpack.unpackb(f)
+        >>> umsgpack.unpack(f)
         {u'compact': True, u'schema': 0}
     """
     try:
@@ -1073,7 +1073,7 @@ def _unpack3(fp, **options):
 
     Example:
         >>> f = open('test.bin', 'rb')
-        >>> umsgpack.unpackb(f)
+        >>> umsgpack.unpack(f)
         {'compact': True, 'schema': 0}
     """
     try:
