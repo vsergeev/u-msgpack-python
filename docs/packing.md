@@ -77,7 +77,7 @@ described below.
 >>> # Attempt to pack set type
 ... umsgpack.packb(set([1,2,3]))
 ...
-umsgpack.UnsupportedTypeException: unsupported type: <type 'set'>
+umsgpack.UnsupportedTypeException: unsupported type: <class 'set'>
 >>> 
 
 >>> # Attempt to pack > 64-bit unsigned int

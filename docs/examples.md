@@ -61,8 +61,8 @@ b'\x01\x02\x03'
 ```
 
 Serializing and deserializing application-defined types with
-
 `ext_serializable()`:
+
 ``` python
 >>> @umsgpack.ext_serializable(0x50)
 ... class Point(collections.namedtuple('Point', ['x', 'y'])):

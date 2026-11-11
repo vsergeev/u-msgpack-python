@@ -26,7 +26,7 @@
       precision during unpacking. Users may override the packing and unpacking
       of the MessagePack `timestamp` format with a custom type for alternate
       behavior.
-    * Both naive and aware timestamp are supported. Naive timestamps are packed
+    * Both naive and aware timestamps are supported. Naive timestamps are packed
       as if they are in the UTC timezone. Timestamps are always unpacked as
       aware `datetime.datetime` objects in the UTC timezone.
 * Ext type handlers specified in the optional `ext_handlers` dictionary will

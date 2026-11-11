@@ -7,7 +7,7 @@
 foo\xc4\x03\x80\x01\x02\xa3bar\x94\x01\x02\x03\x81\xa1a\x94\x01\x02\
 \x03\x80\xff\xcb@\x00\xfc\xd3Z\x85\x87\x94')
 [1, True, False, 4294967295, {'foo': b'\x80\x01\x02', \
- 'bar': [1, 2, 3, {u'a': [1, 2, 3, {}]}]}, -1, 2.12345]
+ 'bar': [1, 2, 3, {'a': [1, 2, 3, {}]}]}, -1, 2.12345]
 >>> 
 ```
 
@@ -103,13 +103,13 @@ Packed data is not type `str` (Python 2), or not type `bytes` (Python 3).
 # Attempt to unpack non-str type data in Python 2
 >>> umsgpack.unpackb(u"no good")
 ...
-TypeError: expected packed data as type 'str'
+TypeError: packed data must be type 'str' or 'bytearray'
 >>> 
 
 # Attempt to unpack non-bytes type data in Python 3
 >>> umsgpack.unpackb("no good")
 ...
-TypeError: expected packed data as type 'bytes'
+TypeError: packed data must be type 'bytes' or 'bytearray'
 >>> 
 ```
 
@@ -183,7 +183,7 @@ umsgpack.UnsupportedTimestampException: unsupported timestamp with data length 2
 # Attempt to unpack reserved code 0xc1
 >>> umsgpack.unpackb(b"\xc1")
 ...
-umsgpack.ReservedCodeException: reserved code encountered: 0xc1
+umsgpack.ReservedCodeException: encountered reserved code: 0xc1
 >>> 
 ```
 
@@ -195,15 +195,15 @@ umsgpack.ReservedCodeException: reserved code encountered: 0xc1
 ```
 
 Python dictionaries only support keys that are instances of
-`collections.Hashable`, so while the map `{ { u'abc': True } : 5 }` has a
+`collections.abc.Hashable`, so while the map `{ { u'abc': True } : 5 }` has a
 MessagePack serialization, it cannot be unpacked into a valid Python
 dictionary.
 
 ``` python
 # Attempt to unpack { {} : False }
->>> umsgpack.unpackb(b"\x82\x80\xc2")
+>>> umsgpack.unpackb(b"\x81\x80\xc2")
 ...
-umsgpack.UnhashableKeyException: encountered unhashable key type: {}, <type 'dict'>
+umsgpack.UnhashableKeyException: encountered unhashable key: "{}" (<class 'dict'>)
 >>> 
 ```
 
@@ -221,7 +221,7 @@ serialized with duplicate keys.
 # Attempt to unpack { 1: True, 1: False }
 >>> umsgpack.unpackb(b"\x82\x01\xc3\x01\xc2")
 ...
-umsgpack.DuplicateKeyException: encountered duplicate key: 1, <type 'int'>
+umsgpack.DuplicateKeyException: encountered duplicate key: "1" (<class 'int'>)
 >>> 
 ```
 

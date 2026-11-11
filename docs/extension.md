@@ -74,7 +74,7 @@ print(obj) # -> Point(1, 2, 3)
 ## Ext Serializable
 
 The `ext_serializable()` decorator registers application classes for automatic
-packing and unpacking with the specified Ext type.  The decorator accepts the
+packing and unpacking with the specified Ext type. The decorator accepts the
 Ext type code as an argument. The application class should implement a
 `packb()` method that returns serialized bytes, and an `unpackb()` class method
 or static method that accepts serialized bytes and returns an instance of the
