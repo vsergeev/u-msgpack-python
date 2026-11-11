@@ -713,11 +713,6 @@ class TestUmsgpack(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             umsgpack.unpackb(b"\xd4\x21\x00")
 
-        # Unregister Ext serializable classes to prevent interference with
-        # subsequent tests
-        umsgpack._ext_classes_to_code = {}
-        umsgpack._ext_code_to_classes = {}
-
     def test_ext_serializable_subclass(self):
         @umsgpack.ext_serializable(0x10)
         class Rectangle:
@@ -746,11 +741,6 @@ class TestUmsgpack(unittest.TestCase):
         # Test unpack (unpacks base class)
         unpacked = umsgpack.unpackb(packed)
         self.assertEqual(unpacked, Rectangle(5, 5))
-
-        # Unregister Ext serializable classes to prevent interference with
-        # subsequent tests
-        umsgpack._ext_classes_to_code = {}
-        umsgpack._ext_code_to_classes = {}
 
     def test_streaming_writer(self):
         # Try first composite test vector
