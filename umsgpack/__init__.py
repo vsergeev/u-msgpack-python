@@ -1278,7 +1278,7 @@ def __init():
     # Build a dispatch table for fast lookup of unpacking function
 
     _unpack_dispatch_table = {}
-    # Fix uint
+    # Positive fixint
     for code in range(0, 0x7f + 1):
         _unpack_dispatch_table[struct.pack("B", code)] = _unpack_integer
     # Fix map
