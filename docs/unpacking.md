@@ -71,6 +71,22 @@ b'\x80\x01\x02\x03'
 >>> 
 ```
 
+### Maximum Nesting Depth
+
+The unpacking functions provide a `max_depth` option to limit the nesting depth
+of unpacked MessagePack arrays and maps. When the limit is exceeded, a
+`umsgpack.MaximumDepthException` is raised. If `max_depth` is unspecified, the
+nesting depth is bounded by the interpreter's recursion limit.
+
+``` python
+>>> umsgpack.unpackb(b'\x91\x91\x91\x91\x91\xc0')
+[[[[[None]]]]]
+>>> umsgpack.unpackb(b'\x91\x91\x91\x91\x91\xc0', max_depth=3)
+...
+umsgpack.MaximumDepthException: maximum nesting depth exceeded
+>>> 
+```
+
 ## Exceptions
 
 If a non-byte-string argument is passed to `umsgpack.unpackb()`, it will raise
@@ -206,6 +222,28 @@ serialized with duplicate keys.
 >>> umsgpack.unpackb(b"\x82\x01\xc3\x01\xc2")
 ...
 umsgpack.DuplicateKeyException: encountered duplicate key: 1, <type 'int'>
+>>> 
+```
+
+### MaximumDepthException
+
+```{eval-rst}
+.. autoexception:: umsgpack.MaximumDepthException
+    :noindex:
+```
+
+This exception is thrown when the maximum nesting depth of unpacked arrays and
+maps is exceeded, either by the `max_depth` option or by the interpreter's
+recursion limit.
+
+``` python
+# Attempt to unpack a deeply nested array
+>>> umsgpack.unpackb(b'\x91' * 1000 + b'\xc0')
+...
+umsgpack.MaximumDepthException: maximum nesting depth exceeded
+>>> umsgpack.unpackb(b'\x91\x91\x91\x91\x91\xc0', max_depth=3)
+...
+umsgpack.MaximumDepthException: maximum nesting depth exceeded
 >>> 
 ```
 

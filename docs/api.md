@@ -68,6 +68,10 @@ Also available under the ``umsgpack.load()`` alias.
 .. autoexception:: umsgpack.DuplicateKeyException
 ```
 
+```{eval-rst}
+.. autoexception:: umsgpack.MaximumDepthException
+```
+
 ## Ext Class
 
 ```{eval-rst}
