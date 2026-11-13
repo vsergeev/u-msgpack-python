@@ -485,8 +485,6 @@ def _pack2(obj, fp, **options):
         >>> f = open('test.bin', 'wb')
         >>> umsgpack.pack({u"compact": True, u"schema": 0}, f)
     """
-    global compatibility
-
     ext_handlers = options.get("ext_handlers")
 
     if obj is None:
@@ -571,8 +569,6 @@ def _pack3(obj, fp, **options):
         >>> f = open('test.bin', 'wb')
         >>> umsgpack.pack({u"compact": True, u"schema": 0}, f)
     """
-    global compatibility
-
     ext_handlers = options.get("ext_handlers")
 
     if obj is None:
@@ -782,7 +778,6 @@ def _unpack_string(code, fp, options):
         raise Exception("logic error, not string: 0x{:02x}".format(ord(code)))
 
     # Always return raw bytes in compatibility mode
-    global compatibility
     if compatibility:
         return _read_except(fp, length)
 
