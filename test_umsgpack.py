@@ -439,9 +439,9 @@ class TestUmsgpack(unittest.TestCase):
             # one we end up with depends on the architecture (32-bit/64-bit)
             if sys.version_info[0] == 2:
                 # Allow both {int,long} -> unpackb -> {int,long}
-                if isinstance(obj, int) or isinstance(obj, long):
+                if isinstance(obj, int) or isinstance(obj, long):  # noqa: F821
                     self.assertTrue(isinstance(unpacked, int) or
-                                    isinstance(unpacked, long))
+                                    isinstance(unpacked, long))  # noqa: F821
                 else:
                     self.assertTrue(isinstance(unpacked, type(obj)))
             # In Python3, we only have the int integer type
@@ -491,7 +491,7 @@ class TestUmsgpack(unittest.TestCase):
             # so convert any string obj to bytes before comparison
             if sys.version_info[0] == 3 and isinstance(obj, str):
                 _obj = obj.encode('utf-8')
-            elif sys.version_info[0] == 2 and isinstance(obj, unicode):
+            elif sys.version_info[0] == 2 and isinstance(obj, unicode):  # noqa: F821
                 _obj = bytes(obj)
             else:
                 _obj = obj
@@ -780,8 +780,9 @@ class TestUmsgpack(unittest.TestCase):
         # Get a list of global variables from umsgpack module
         exported_vars = list([x for x in dir(umsgpack) if not x.startswith("_")])
         # Ignore imports
-        exported_vars = list([x for x in exported_vars if x != "struct" and x != "collections" and x != "datetime" and x !=
-                                    "sys" and x != "io" and x != "xrange" and x != "Hashable" and x != "functools"])
+        ignore_vars = ["struct", "collections", "datetime", "sys", "io",
+                       "xrange", "Hashable", "functools"]
+        exported_vars = [x for x in exported_vars if x not in ignore_vars]
 
         self.assertTrue(len(exported_vars) == len(exported_vars_test_vector))
         for var in exported_vars_test_vector:
