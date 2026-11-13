@@ -24,9 +24,6 @@ jobs:
           - python-version: "3.7"
             container: python:3.7
             toxenv: py37,mypy
-          - python-version: "pypy2.7"
-            container: pypy:2.7
-            toxenv: pypy2
           - python-version: "3.8"
             toxenv: py38,mypy
           - python-version: "3.9"
@@ -43,7 +40,16 @@ jobs:
             toxenv: py314,mypy
           - python-version: "3.15"
             toxenv: py315,mypy
+          - python-version: "pypy2.7"
+            container: pypy:2.7
+            toxenv: pypy2
           - python-version: "pypy3.9"
+            toxenv: pypy3
+          - python-version: "pypy3.10"
+            toxenv: pypy3
+          - python-version: "pypy3.11"
+            toxenv: pypy3
+          - python-version: "pypy3.12"
             toxenv: pypy3
 
     container: ${{ matrix.container }}
