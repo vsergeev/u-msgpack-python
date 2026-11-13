@@ -13,7 +13,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
-import umsgpack
+import umsgpack  # noqa: E402, imported after sys.path setup
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -21,7 +21,7 @@ import umsgpack
 project = 'u-msgpack-python'
 copyright = '2013-2023, Vanya A. Sergeev'
 author = 'Vanya A. Sergeev'
-release = '2.8.0'
+release = umsgpack.__version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
