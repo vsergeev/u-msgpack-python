@@ -19,7 +19,7 @@ import umsgpack  # noqa: E402, imported after sys.path setup
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'u-msgpack-python'
-copyright = '2013-2023, Vanya A. Sergeev'
+copyright = '2013-2026, Vanya A. Sergeev'
 author = 'Vanya A. Sergeev'
 release = umsgpack.__version__
 
